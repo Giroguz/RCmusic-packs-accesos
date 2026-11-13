@@ -413,7 +413,7 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
       <dl class="stats">
         <div class="stat"><dt>Packs</dt><dd id="sPacks">—</dd></div>
         <div class="stat"><dt>Archivos</dt><dd id="sFiles">—</dd></div>
-        <div class="stat"><dt>Desde</dt><dd id="sFrom">—</dd></div>
+        <div class="stat"><dt>Desde</dt><dd id="sFrom">—</dd></div><div class="stat" id="sPesoPack" hidden><dt>Peso pack géneros · 13 nov</dt><dd>≈ 644,23 GB</dd></div>
       </dl>
     </div>
     <div class="scope" aria-hidden="true">
@@ -1012,7 +1012,7 @@ async function loadCatalog(){
 }
 function renderHome(){
   $$(".js-wa").forEach(a => a.href = waLink(wa(), `Hola ${CONFIG.marca}, quiero información sobre sus packs.`));
-  $("#sPacks").textContent = CARP.length;
+  $("#sPacks").textContent = CARP.length; $("#sPesoPack").hidden = !CARP.some(c => c.id === "04e7105e" && c.drive === "16WzGpwRhdX_6Pvg8JIHhIcYSCfWOA3xu");
   const tot = CARP.reduce((t,c)=>t+(Number(c.cantidad)||0),0);
   $("#sFiles").textContent = tot ? fmtNum(tot) : "—";
   const pagos = CARP.map(c=>Number(c.precio)||0).filter(p=>p>0);
