@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070f">
+<title>R&amp;Cmusic · Packs para DJs</title>
+<meta name="description" content="R&Cmusic: packs de música, transiciones, intros, mashups, samples y programas para DJs, servidos desde Google Drive.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=flags3">
+</head>
+<body>
+<div id="bg" aria-hidden="true"><div class="photo" id="bgPhoto" hidden></div><canvas id="bgCanvas"></canvas></div>
+<a class="skip" href="#packs">Saltar a los packs</a>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio" aria-label="R&amp;Cmusic, inicio"><img src="logo.webp" alt="" width="40" height="40"><span>R&amp;C<b>music</b></span></a>
+    <nav class="main" aria-label="Secciones">
+      <a href="#packs" data-spy="packs">Packs</a>
+      <a href="#como" data-spy="como">Cómo funciona</a>
+      <a href="#" class="js-wa" target="_blank" rel="noopener">WhatsApp</a>
+    </nav>
+    <div class="acts">
+      <button type="button" class="btn ghost" id="hdrLogin" data-open="cuenta">Ingresar</button>
+      <button type="button" class="btn grad" id="hdrReg" data-open="registro">Registrarse</button>
+      <button type="button" class="chip-user" id="hdrUser" data-open="cuenta" hidden><span class="avatar" id="hdrAvatar"></span><span id="hdrName">Mi cuenta</span></button>
+    </div>
+  </div>
+</header>
+
+<main id="inicio">
+  <section class="hero wrap">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">R&amp;Cmusic <span>/</span> Packs para DJs</p>
+      <h1>Música, videos y herramientas <em>para la cabina</em></h1>
+      <p class="lead" id="lema">Packs de géneros, transiciones, intros, mashups, samples y programas, ordenados por BPM y listos para tu set.</p>
+      <div class="cta">
+        <a class="btn grad lg" href="#packs">Ver los packs</a>
+      </div>
+      <ul class="perks">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z M4 7l8 6 8-6"/></svg>Entras con tu Gmail</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l5 9-4 7H7l-4-7z"/></svg>Archivos en Google Drive</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9m5 9V5m5 13v-7m5 7V8"/></svg>Ordenado por BPM</li>
+      </ul>
+    </div>
+    <div class="scope" aria-hidden="true">
+      <img class="scope-img" src="foto.webp" alt="" fetchpriority="high" decoding="async">
+      <div class="scope-shade"></div>
+      <canvas id="scope"></canvas>
+      <div class="hud"><span id="hudL">SEÑAL · EN ESPERA</span><span id="hudR">— BPM</span></div>
+      <div class="disc"><img id="disc" src="logo.webp" alt=""></div>
+      <div class="now" id="hudNow">Abre un pack y reproduce una pista</div>
+      <dl class="stats">
+        <div><dt>Packs</dt><dd id="sPacks">—</dd></div>
+        <div><dt>Archivos</dt><dd id="sFiles">—</dd></div>
+        <div><dt>Desde</dt><dd id="sFrom">—</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="block wrap" id="packs" aria-labelledby="packsTitle">
+    <div class="block-head">
+      <div>
+        <h2 id="packsTitle">Packs y carpetas</h2>
+        <p>Abre un pack para ver todo su contenido al instante. Pulsa <b>Comprar</b> y te contactamos por WhatsApp para activarlo.</p>
+      </div>
+      <p class="mine-note" id="mineNote" hidden></p>
+    </div>
+    <div class="packs" id="packGrid" aria-live="polite"></div>
+  </section>
+
+  <section class="promo wrap" aria-labelledby="promoTitle">
+    <div class="promo-in">
+      <img class="promo-img" src="foto.webp" alt="" loading="lazy" decoding="async">
+      <div class="promo-txt">
+        <p class="eyebrow">Para DJs que mueven la pista</p>
+        <h2 id="promoTitle">Tu próximo set empieza <em>aquí</em></h2>
+        <p>Géneros, transiciones, intros y mashups ordenados por BPM, listos para reproducir y descargar desde tu Google Drive.</p>
+        <a class="btn lg js-wa promo-wa" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 9 19.3z"/></svg>Consultar por WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="block wrap" id="como" aria-labelledby="comoTitle">
+    <div class="block-head"><div><h2 id="comoTitle">Cómo funciona</h2><p>Tres pasos y estás en la cabina.</p></div></div>
+    <ol class="steps">
+      <li><span class="n">01</span><h3>Crea tu cuenta</h3><p>Nombre, Gmail y WhatsApp. Entras con un código que llega a tu correo, sin contraseñas.</p></li>
+      <li><span class="n">02</span><h3>Pulsa Comprar</h3><p>El administrador recibe tu solicitud al instante y te escribe por WhatsApp para el pago.</p></li>
+      <li><span class="n">03</span><h3>Reproduce y descarga</h3><p>Al activarse, el pack se abre aquí y en tu Google Drive, en “Compartido conmigo”.</p></li>
+    </ol>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>© <span id="year">2026</span> R&amp;Cmusic · Archivos alojados en Google Drive</span>
+    <nav aria-label="Pie de página">
+      <button type="button" data-open="registro">Crear cuenta</button>
+      <button type="button" data-open="cuenta">Ingresar</button>
+      <a href="#" class="js-wa" target="_blank" rel="noopener">WhatsApp</a>
+      <button type="button" data-open="admin">Administrador</button>
+    </nav>
+  </div>
+</footer>
+
+<!-- Barra inferior (celular) -->
+<nav class="tabbar" aria-label="Navegación rápida">
+  <a href="#inicio" data-spy="inicio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg><span>Inicio</span></a>
+  <a href="#packs" data-spy="packs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Packs</span></a>
+  <button type="button" data-open="cuenta"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span id="tabAccount">Ingresar</span></button>
+  <a href="#" class="js-wa" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 9 19.3z"/></svg><span>WhatsApp</span></a>
+</nav>
+
+<!-- Reproductor -->
+<div class="dock" id="dock" role="region" aria-label="Reproductor">
+  <div class="ctrl">
+    <button type="button" id="prev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+    <button type="button" id="next" aria-label="Siguiente"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+  </div>
+  <div class="meta"><div class="t" id="dockT"></div><div class="s"><span class="eq"><i></i><i></i><i></i><i></i></span><span id="dockS"></span></div></div>
+  <div class="frame" id="dockFrame"></div>
+  <button type="button" class="x" id="dockStop" aria-label="Cerrar reproductor"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div>
+
+<!-- Pack -->
+<div class="modal" id="fModal" role="dialog" aria-modal="true" aria-labelledby="fName">
+  <div class="sheet pack-sheet">
+    <button type="button" class="x close-float" data-close aria-label="Cerrar" title="Cerrar (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <aside class="pinfo">
+      <div class="pcover" id="fCover"></div>
+      <div class="ptext">
+        <p class="eyebrow" id="fMeta"></p>
+        <h2 id="fName"></h2>
+        <p class="pdesc" id="fDesc"></p>
+        <div class="pprice"><strong class="amt" id="fPrice"></strong><span class="per" id="fPer"></span></div>
+        <p class="pnote" id="fPriceNote"></p>
+        <p class="fstate" id="fState"></p>
+        <div class="pbtns">
+          <button type="button" class="btn grad lg" id="fBuy">Comprar</button>
+          <a class="btn lg" id="fDrive" href="#" target="_blank" rel="noopener" hidden>Abrir en Drive · descargar todo</a>
+        </div>
+      </div>
+    </aside>
+    <section class="pcontent" aria-label="Contenido del pack">
+      <div class="pstick" id="pstick">
+        <div class="ptools">
+          <div class="field search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="fq" type="search" placeholder="Buscar por nombre, BPM o subcarpeta" autocomplete="off" aria-label="Buscar en este pack"></div>
+          <p class="pcount" id="fCount"></p>
+        </div>
+        <div class="subs" id="fSubs"></div>
+      </div>
+      <div class="flist" id="fList"></div>
+    </section>
+    <div class="buybar" id="buybar"><div><div class="pp"><strong class="amt" id="bbPrice"></strong><span class="per" id="bbPer"></span></div><span class="bbnote" id="bbNote"></span></div><button type="button" class="btn grad" id="bbBuy">Comprar</button></div>
+  </div>
+</div>
+
+<!-- Confirmar compra -->
+<div class="modal" id="bModal" role="dialog" aria-modal="true" aria-labelledby="bTitle">
+  <div class="sheet small">
+    <header class="shead"><h3 id="bTitle">Confirmar solicitud</h3><button type="button" class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="body" id="bAsk">
+      <div class="buy-item"><div id="bCover"></div><div><b id="bPack"></b><div id="bPrice"></div><span id="bDur" class="muted"></span></div></div>
+      <dl class="kv" id="bWho"></dl>
+      <p class="note">Al enviar, el administrador recibe un aviso con este pack y tus datos. Te escribirá por WhatsApp para coordinar el pago y activar tu acceso de lector en Google Drive.</p>
+      <p class="err" id="bErr" role="alert"></p>
+      <div class="row-end"><button type="button" class="btn" data-close>Cancelar</button><button type="button" class="btn grad" id="bSend">Enviar solicitud</button></div>
+    </div>
+    <div class="body done" id="bDone" hidden>
+      <div class="okmark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></div>
+      <h3 id="bDoneT">Solicitud enviada</h3>
+      <p class="note" id="bDoneP"></p>
+      <div class="row-center"><a class="btn" id="bWa" href="#" target="_blank" rel="noopener">Escribir por WhatsApp</a><button type="button" class="btn light" data-close>Seguir viendo packs</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Registro -->
+<div class="modal" id="rModal" role="dialog" aria-modal="true" aria-labelledby="rTitle">
+  <div class="sheet small">
+    <header class="shead"><h3 id="rTitle"><img src="logo.webp" alt="">Crea tu cuenta</h3><button type="button" class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="body">
+      <div class="ctx steps-ctx" id="rContext" hidden></div>
+      <form class="form" id="regForm" novalidate>
+        <label class="w6">Nombre o nombre artístico<input id="rNom" maxlength="80" autocomplete="name" placeholder="DJ Rafa" required></label>
+        <label class="w6">Correo de Google (Gmail)<input id="rMail" type="email" autocomplete="email" inputmode="email" placeholder="tucorreo@gmail.com" required><span class="help">Con este Gmail entras a la web y recibes acceso a las carpetas.</span></label>
+        <div class="w6 lbl">WhatsApp
+          <div class="phone">
+            <div class="country-picker" id="countryPicker">
+              <select class="inp" id="rPais" aria-label="Código de país" hidden>
+                <option value="51">🇵🇪 +51</option><option value="52">🇲🇽 +52</option><option value="57">🇨🇴 +57</option>
+                <option value="593">🇪🇨 +593</option><option value="591">🇧🇴 +591</option><option value="56">🇨🇱 +56</option>
+                <option value="54">🇦🇷 +54</option><option value="58">🇻🇪 +58</option><option value="507">🇵🇦 +507</option>
+                <option value="1">🇺🇸 +1</option><option value="34">🇪🇸 +34</option>
+              </select>
+              <button type="button" class="inp country-current" id="rPaisBtn" aria-label="Elegir país y código telefónico" aria-haspopup="listbox" aria-expanded="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbAgMAAABzfiX9AAAACVBMVEXZECP////zsLY4yROxAAAAFklEQVQY02NgYGBQDQ2NYICAUSYuJgAGeB8eIlqm5wAAAABJRU5ErkJggg==" alt="" aria-hidden="true"></span><span class="country-code">+51</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+              <div class="country-menu" id="rPaisMenu" role="listbox" aria-label="País y código telefónico" hidden>
+                <button type="button" role="option" data-country="51" data-flag="🇵🇪" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbAgMAAABzfiX9AAAACVBMVEXZECP////zsLY4yROxAAAAFklEQVQY02NgYGBQDQ2NYICAUSYuJgAGeB8eIlqm5wAAAABJRU5ErkJggg==" aria-selected="true"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbAgMAAABzfiX9AAAACVBMVEXZECP////zsLY4yROxAAAAFklEQVQY02NgYGBQDQ2NYICAUSYuJgAGeB8eIlqm5wAAAABJRU5ErkJggg==" alt="" aria-hidden="true"></span><b>Perú</b><small>+51</small></button>
+                <button type="button" role="option" data-country="52" data-flag="🇲🇽" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAXCAMAAABODP0nAAAAh1BMVEUAaEfOESb///+qzMHvrrXR0rWKYUHe4dHy7+fW069pPyP8/PnBxKJwra/ur7a2upL19ezm28vRtKOng3HIrHHnzserlmmSblSgelzQ6OJRkpB4VDxkRjXDs4r889m4296Bp6mfZj9/Tie5r6i7083Dtq7b2MLcwpGUlI+Ogmu5iVulyszYwIRdbSBmAAAAfElEQVQoz+XTtxbCMAxAUUMid+P0XihpkPz/92U1A0dkzpvvIh2JEDfv6nS7uJHf0D8TVGH0oOkfUCQfKiVHYTe1RSOfMQYD1c60LmiuEKhTveVNPb4sAsVgljV7xyEgkENpqsrcgWHDMCiTrBeAr4drFtngbNdzHH5/4Q77sAk1toKo3AAAAABJRU5ErkJggg==" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAXCAMAAABODP0nAAAAh1BMVEUAaEfOESb///+qzMHvrrXR0rWKYUHe4dHy7+fW069pPyP8/PnBxKJwra/ur7a2upL19ezm28vRtKOng3HIrHHnzserlmmSblSgelzQ6OJRkpB4VDxkRjXDs4r889m4296Bp6mfZj9/Tie5r6i7083Dtq7b2MLcwpGUlI+Ogmu5iVulyszYwIRdbSBmAAAAfElEQVQoz+XTtxbCMAxAUUMid+P0XihpkPz/92U1A0dkzpvvIh2JEDfv6nS7uJHf0D8TVGH0oOkfUCQfKiVHYTe1RSOfMQYD1c60LmiuEKhTveVNPb4sAsVgljV7xyEgkENpqsrcgWHDMCiTrBeAr4drFtngbNdzHH5/4Q77sAk1toKo3AAAAABJRU5ErkJggg==" alt="" aria-hidden="true"></span><b>México</b><small>+52</small></button>
+                <button type="button" role="option" data-country="57" data-flag="🇨🇴" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAAD1BMVEUAMIfIEC7/zQCWGER/fkQonp92AAAAHklEQVQoz2NQwgIYRrKgCxbAMLDAGAtgEMQC6CYIAA/lM811RVp8AAAAAElFTkSuQmCC" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAAD1BMVEUAMIfIEC7/zQCWGER/fkQonp92AAAAHklEQVQoz2NQwgIYRrKgCxbAMLDAGAtgEMQC6CYIAA/lM811RVp8AAAAAElFTkSuQmCC" alt="" aria-hidden="true"></span><b>Colombia</b><small>+57</small></button>
+                <button type="button" role="option" data-country="593" data-flag="🇪🇨" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAA7VBMVEX/3QD72wkiYZzpzxqBllAPVqL42QEDTqLtHCSyKETivAhZfWlwi1rdyhyMcTVfgmS2J0DVvTxuVCOvkRrw1iUwaI+IahrduSBARHxrVz2/oQXjsCDIvht7klJiRRuZuhicoTyQoXmqMUifciarxx1rtVWOo0BnhXY7eoaCq4aQrHKv0tx6lo/wzgWFl2I1UoDcwi2pkj68tiZkb2HWuBJ8YRNjV2aAYjPApUVCcXiiWlxcXY9eoIzBtyNWi0I6bHyiY2Gkf4Gdgld4mG6Ao56AoJWgkH9Ch3WBy+Avg5+0oIb0+fpohYGmgYAKcZVq2NRJAAAAwklEQVQ4y+3Mxw6CQBhG0QEElA6KCCIde++99/b+j6MuBcO4Nt7NJPOd/AD8e1YTmwCIGIwRnGoMhi1JSiehlEqv1Z5GERCHKIRmJBFCQaJdCtM9q1xmzS6Wij6Y9WLbUmk3N7OQk1Terlwqx02eCi6x92b0uVqlr3u+HRgA+V5ucfNPU381YgJDCNJO8X4oOjwM8vpkWSiMMywNgShmc67L1VkUAnFUtvodRkZxCCRxEs80Xk8QJsIJwodPEP+yn4IPXesen6UX1vkAAAAASUVORK5CYII=" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAA7VBMVEX/3QD72wkiYZzpzxqBllAPVqL42QEDTqLtHCSyKETivAhZfWlwi1rdyhyMcTVfgmS2J0DVvTxuVCOvkRrw1iUwaI+IahrduSBARHxrVz2/oQXjsCDIvht7klJiRRuZuhicoTyQoXmqMUifciarxx1rtVWOo0BnhXY7eoaCq4aQrHKv0tx6lo/wzgWFl2I1UoDcwi2pkj68tiZkb2HWuBJ8YRNjV2aAYjPApUVCcXiiWlxcXY9eoIzBtyNWi0I6bHyiY2Gkf4Gdgld4mG6Ao56AoJWgkH9Ch3WBy+Avg5+0oIb0+fpohYGmgYAKcZVq2NRJAAAAwklEQVQ4y+3Mxw6CQBhG0QEElA6KCCIde++99/b+j6MuBcO4Nt7NJPOd/AD8e1YTmwCIGIwRnGoMhi1JSiehlEqv1Z5GERCHKIRmJBFCQaJdCtM9q1xmzS6Wij6Y9WLbUmk3N7OQk1Terlwqx02eCi6x92b0uVqlr3u+HRgA+V5ucfNPU381YgJDCNJO8X4oOjwM8vpkWSiMMywNgShmc67L1VkUAnFUtvodRkZxCCRxEs80Xk8QJsIJwodPEP+yn4IPXesen6UX1vkAAAAASUVORK5CYII=" alt="" aria-hidden="true"></span><b>Ecuador</b><small>+593</small></button>
+                <button type="button" role="option" data-country="591" data-flag="🇧🇴" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAAilBMVEUAcC3XeSHLwzfgvzECcS7TIRLp3jrTIBHw5Tzw5T3hkynu40HezzjX0Hfn3lLHYx7RLhOzwUWMViTRXRzORhTPUxpIjnaMmT9PVyNupZbc1zeYp1JUmHxknHrVYh7NeiXklirVYR/csUq6si9tnXfcqTlJjzuHg0xtnyzRp1SStScxhXoxhH3azls8d0O5AAAAgklEQVQ4y+3QSRKCQAwFUJLGBnpgngdRFBTQ+1+PvV1lWLDkL1Ovksq3nH25WCc8Brq/4dp9RMbUMyCXxauMJCeg9GGci1IPvS//bxSpaqqqwfRGnIasXr/6U2dAwHuC7fJuMbkSUISs66YnCwX1NQRxnscB0PWgYkyhWc/O2Cc8Bm4tcRiKrQyBiQAAAABJRU5ErkJggg==" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAAilBMVEUAcC3XeSHLwzfgvzECcS7TIRLp3jrTIBHw5Tzw5T3hkynu40HezzjX0Hfn3lLHYx7RLhOzwUWMViTRXRzORhTPUxpIjnaMmT9PVyNupZbc1zeYp1JUmHxknHrVYh7NeiXklirVYR/csUq6si9tnXfcqTlJjzuHg0xtnyzRp1SStScxhXoxhH3azls8d0O5AAAAgklEQVQ4y+3QSRKCQAwFUJLGBnpgngdRFBTQ+1+PvV1lWLDkL1Ovksq3nH25WCc8Brq/4dp9RMbUMyCXxauMJCeg9GGci1IPvS//bxSpaqqqwfRGnIasXr/6U2dAwHuC7fJuMbkSUISs66YnCwX1NQRxnscB0PWgYkyhWc/O2Cc8Bm4tcRiKrQyBiQAAAABJRU5ErkJggg==" alt="" aria-hidden="true"></span><b>Bolivia</b><small>+591</small></button>
+                <button type="button" role="option" data-country="56" data-flag="🇨🇱" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAALVBMVEUAMqD////aKRzsk41tLV2qut9FabkfS6vEz+mOpdVZesL7/P7Z4PEuV7HBcH2oC8C/AAAAQklEQVQoz2NgAANWQWTAQJJgATbBBkxB9mU70zBVThQ8jinIIY3FTJ6MBZiCBQwXKHI8pqALGPgZIwMGJSxgJAsCAK+OORxJT/LKAAAAAElFTkSuQmCC" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAALVBMVEUAMqD////aKRzsk41tLV2qut9FabkfS6vEz+mOpdVZesL7/P7Z4PEuV7HBcH2oC8C/AAAAQklEQVQoz2NgAANWQWTAQJJgATbBBkxB9mU70zBVThQ8jinIIY3FTJ6MBZiCBQwXKHI8pqALGPgZIwMGJSxgJAsCAK+OORxJT/LKAAAAAElFTkSuQmCC" alt="" aria-hidden="true"></span><b>Chile</b><small>+56</small></button>
+                <button type="button" role="option" data-country="54" data-flag="🇦🇷" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAZCAMAAAB0BpxXAAAAOVBMVEX////dsWLs1rTw3sb9/Pzlw43qpQ10rN/R4/Tz5tHcr27iuW7q0Kb68+j39fHfmxX79ez78uLani6jcieqAAAAWElEQVQ4y+3SwQ2AMAhAUaCAUmpb3X9YB9AIB4/955cQCLAlgwU/4Z4MHrERGUMYF6lVSgynoKq3M4Tdh+rlPYQH4VBsM55tglUMEtsYlbet03dc//gLvAEAIhV4te0c2QAAAABJRU5ErkJggg==" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAZCAMAAAB0BpxXAAAAOVBMVEX////dsWLs1rTw3sb9/Pzlw43qpQ10rN/R4/Tz5tHcr27iuW7q0Kb68+j39fHfmxX79ez78uLani6jcieqAAAAWElEQVQ4y+3SwQ2AMAhAUaCAUmpb3X9YB9AIB4/955cQCLAlgwU/4Z4MHrERGUMYF6lVSgynoKq3M4Tdh+rlPYQH4VBsM55tglUMEtsYlbet03dc//gLvAEAIhV4te0c2QAAAABJRU5ErkJggg==" alt="" aria-hidden="true"></span><b>Argentina</b><small>+54</small></button>
+                <button type="button" role="option" data-country="58" data-flag="🇻🇪" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAAMFBMVEXPFCsAJH3/zAACI3z9ygELLYPN0+VTbKcqR5La3+s+WZyjr8+mstHv8vcfP42DlcCkRU/4AAAAUUlEQVQoz2NwUsIAKgxDRdBQEAMIwwVFT60JRBeU33dr7euPaILRiYGiYkdRBcUSESRcMLwQRIqXIgtKzIBo7GxEEhSdChGMDER1Eoo7hzIAAApBMYrXtxjsAAAAAElFTkSuQmCC" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbBAMAAAD8PtBdAAAAMFBMVEXPFCsAJH3/zAACI3z9ygELLYPN0+VTbKcqR5La3+s+WZyjr8+mstHv8vcfP42DlcCkRU/4AAAAUUlEQVQoz2NwUsIAKgxDRdBQEAMIwwVFT60JRBeU33dr7euPaILRiYGiYkdRBcUSESRcMLwQRIqXIgtKzIBo7GxEEhSdChGMDER1Eoo7hzIAAApBMYrXtxjsAAAAAElFTkSuQmCC" alt="" aria-hidden="true"></span><b>Venezuela</b><small>+58</small></button>
+                <button type="button" role="option" data-country="507" data-flag="🇵🇦" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAAPFBMVEX////v6+7+/v72xMaCkKr59/ntio7aEhoHI1fsiIzeLDNabI9sfJvjS1Hvlpr62dpCV38aNGSvuMmwucl/ZNIqAAAAdklEQVQ4y8WRSQ6AMAwDm5Qk3aAs//8rPSIRCV+AOY9sKwnBwRzCi6IIKB47KNaKiLSmwUqPInNLqTFS3batIRu5ElUkUYbE8u1nJod8R0NycGs+FnsHRVVEJM2lZKXnxFjMSgSqeTFboI2z5hkRZdRG+engF055BhJCvUli6QAAAABJRU5ErkJggg==" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAAPFBMVEX////v6+7+/v72xMaCkKr59/ntio7aEhoHI1fsiIzeLDNabI9sfJvjS1Hvlpr62dpCV38aNGSvuMmwucl/ZNIqAAAAdklEQVQ4y8WRSQ6AMAwDm5Qk3aAs//8rPSIRCV+AOY9sKwnBwRzCi6IIKB47KNaKiLSmwUqPInNLqTFS3batIRu5ElUkUYbE8u1nJod8R0NycGs+FnsHRVVEJM2lZKXnxFjMSgSqeTFboI2z5hkRZdRG+engF055BhJCvUli6QAAAABJRU5ErkJggg==" alt="" aria-hidden="true"></span><b>Panamá</b><small>+507</small></button>
+                <button type="button" role="option" data-country="1" data-flag="🇺🇸" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAVBAMAAADGNLEtAAAALVBMVEX////GU3LZjKGzGUINM2PsxtAYPWotT3hed5enma46WoBPa46zGkMkR3Jrgp+6ntXWAAAAiklEQVQY02Nwc0lJcQMSxghgw+CRVdaWkVXWooQEGFxaPLxKWjxcGJCBn1fJExAWRAJglUuAKlEEPdyXgA1A0e62LTu9bFt2CopF3iCh9LItKE5yX5tVe31tVgmq9pL0NLcy95RQJMAAdiUQo2ifCQUoKrECY0xgw6CEBWDXLogFYBfECrBahM1JAItMTcEiMDpsAAAAAElFTkSuQmCC" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAVBAMAAADGNLEtAAAALVBMVEX////GU3LZjKGzGUINM2PsxtAYPWotT3hed5enma46WoBPa46zGkMkR3Jrgp+6ntXWAAAAiklEQVQY02Nwc0lJcQMSxghgw+CRVdaWkVXWooQEGFxaPLxKWjxcGJCBn1fJExAWRAJglUuAKlEEPdyXgA1A0e62LTu9bFt2CopF3iCh9LItKE5yX5tVe31tVgmq9pL0NLcy95RQJMAAdiUQo2ifCQUoKrECY0xgw6CEBWDXLogFYBfECrBahM1JAItMTcEiMDpsAAAAAElFTkSuQmCC" alt="" aria-hidden="true"></span><b>Estados Unidos</b><small>+1</small></button>
+                <button type="button" role="option" data-country="34" data-flag="🇪🇸" data-flag-img="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAApVBMVEX6vQCtFRnBPxP3tgCkSRTxsQC9miCtkjL3ugDcdwrVkwndpwauUEi3k3ecLQyvGx01YomtXy3Zhha+gw+4LiCzn4jKeBKyYgjmoAOkXUK/RhC1kJmmKh+0oKCbYwN5OAWWHxSVi0HypQNcdGsDAgC9g1j6vgSWhnLfsSXCn169cE24eBuaNwzQaiOYagW8bxWIOhqoKhPLdq4yUHR+UgVZLWaBHkAs3esWAAAAk0lEQVQ4y+WTVxLDIAxESQwBAwb33tKc3sv9j5YbWJp8JvurNzsrzYpMkCI/BU6RIt9phqIcJSOpEGBu7c2WA+iXOWmbtTmTACh42PdelSgwp+d2nXdvTjuAc3X5vL6qJo4XQEZ9qd8PXaR7yDE5GFOf6XbNRrmB8cgcKaUraJm5z4NiE4RLH3FyIUaG6Pb85XN9AIg9CvrV7UGSAAAAAElFTkSuQmCC" aria-selected="false"><span class="country-flag"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAbCAMAAAA5zj1cAAAApVBMVEX6vQCtFRnBPxP3tgCkSRTxsQC9miCtkjL3ugDcdwrVkwndpwauUEi3k3ecLQyvGx01YomtXy3Zhha+gw+4LiCzn4jKeBKyYgjmoAOkXUK/RhC1kJmmKh+0oKCbYwN5OAWWHxSVi0HypQNcdGsDAgC9g1j6vgSWhnLfsSXCn169cE24eBuaNwzQaiOYagW8bxWIOhqoKhPLdq4yUHR+UgVZLWaBHkAs3esWAAAAk0lEQVQ4y+WTVxLDIAxESQwBAwb33tKc3sv9j5YbWJp8JvurNzsrzYpMkCI/BU6RIt9phqIcJSOpEGBu7c2WA+iXOWmbtTmTACh42PdelSgwp+d2nXdvTjuAc3X5vL6qJo4XQEZ9qd8PXaR7yDE5GFOf6XbNRrmB8cgcKaUraJm5z4NiE4RLH3FyIUaG6Pb85XN9AIg9CvrV7UGSAAAAAElFTkSuQmCC" alt="" aria-hidden="true"></span><b>España</b><small>+34</small></button>
+              </div>
+            </div>
+            <input class="inp" id="rWa" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="987 654 321" aria-label="Número de WhatsApp" required>
+          </div>
+        </div>
+        <div class="hp" aria-hidden="true"><label>Sitio web<input id="rWeb" tabindex="-1" autocomplete="off"></label></div>
+        <label class="tick w6"><input type="checkbox" id="rOk"><span>Acepto que R&amp;Cmusic me contacte por WhatsApp y que mis datos se usen solo para gestionar mi cuenta y mis compras.</span></label>
+        <p class="err w6" id="rErr" role="alert"></p>
+        <div class="w6 row-split"><button type="button" class="linkbtn" data-open="cuenta">Ya tengo cuenta</button><button type="submit" class="btn grad" id="rSend">Crear cuenta</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Ingresar / Mi cuenta -->
+<div class="modal" id="mModal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="sheet small">
+    <header class="shead"><h3 id="mTitle"><img src="logo.webp" alt=""><span id="mTitleTxt">Ingresar</span></h3><button type="button" class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="body">
+      <p class="note ctx" id="mContext" hidden></p>
+      <form id="mStep1" class="form" novalidate>
+        <p class="note w6">Escribe el Gmail con el que te registraste. Te enviaremos un código de 6 dígitos.</p>
+        <label class="w6">Correo de Google (Gmail)<input id="mMail" type="email" inputmode="email" autocomplete="email" placeholder="tucorreo@gmail.com"></label>
+        <p class="err w6" id="mErr1" role="alert"></p>
+        <div class="w6 row-split"><button type="button" class="linkbtn" data-open="registro">Crear cuenta</button><button type="submit" class="btn grad" id="mSend">Enviarme el código</button></div>
+        <p class="banner w6 demo-only" hidden><b>Modo demostración.</b> Prueba con <code>ejemplo.dos@gmail.com</code>; el código es <code>123456</code>.</p>
+      </form>
+      <form id="mStep2" class="form" novalidate hidden>
+        <p class="note w6" id="mSentTo"></p>
+        <label class="w6">Código de 6 dígitos<input id="mCode" class="code-in" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······"></label>
+        <p class="err w6" id="mErr2" role="alert"></p>
+        <div class="w6 row-split"><button type="button" class="linkbtn" id="mBack">Usar otro correo</button><button type="submit" class="btn grad" id="mGo">Ingresar</button></div>
+        <button type="button" class="linkbtn w6" id="mResend">Reenviar código</button>
+      </form>
+      <div id="mIn" hidden>
+        <div class="acct-head"><span class="avatar lg" id="mAvatar"></span><div><h3 id="mName"></h3><p class="note" id="mWho"></p></div><button type="button" class="btn sm" id="mOut">Cerrar sesión</button></div>
+        <p class="banner">Para reproducir, tu navegador debe tener abierta la sesión de Google de este mismo correo.</p>
+        <h4 class="subt">Mis packs</h4>
+        <div id="mList"></div>
+        <div id="mReqs"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Administrador -->
+<div class="modal" id="aModal" role="dialog" aria-modal="true" aria-labelledby="aTitle">
+  <div class="sheet admin">
+    <header class="shead">
+      <h3 id="aTitle"><img src="logo.webp" alt="">Administrador</h3>
+      <div class="row-end">
+        <a class="btn sm" id="aSheet" href="#" target="_blank" rel="noopener" hidden>Google Sheets</a>
+        <button type="button" class="btn sm" id="aOut" hidden>Salir</button>
+        <button type="button" class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+    </header>
+    <div class="body" id="aLogin">
+      <form class="login" id="loginForm" novalidate>
+        <img src="logo.webp" alt="">
+        <h3>Ingreso de administrador</h3>
+        <p class="note">Solicitudes de compra, registros, accesos, carpetas y ajustes.</p>
+        <input class="inp" id="aPass" type="password" autocomplete="current-password" placeholder="Clave de administrador" aria-label="Clave de administrador">
+        <p class="err" id="aErr" role="alert"></p>
+        <button type="submit" class="btn grad" id="aGo">Ingresar</button>
+        <p class="banner demo-only" hidden><b>Modo demostración.</b> Usa la clave <code>demo</code>; los cambios se guardan solo en este navegador.</p>
+      </form>
+    </div>
+    <div id="aDash" hidden>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-atab="sols">Solicitudes <span class="badge" id="solBadge" hidden></span></button>
+        <button type="button" role="tab" aria-selected="false" data-atab="regs">Registros <span class="badge" id="newBadge" hidden></span></button>
+        <button type="button" role="tab" aria-selected="false" data-atab="cars">Carpetas y precios</button>
+        <button type="button" role="tab" aria-selected="false" data-atab="ajs">Ajustes</button>
+      </div>
+
+      <div class="body" id="aSols">
+        <p class="banner demo-only" hidden><b>Modo demostración.</b> Las solicitudes viven en este navegador. Con el servidor conectado, cada “Comprar” te llega por correo y aparece aquí.</p>
+        <div class="atools"><div class="seg" role="group" aria-label="Filtrar solicitudes" id="segSol">
+          <button type="button" data-sol="Pendiente" aria-pressed="true">Pendientes</button>
+          <button type="button" data-sol="" aria-pressed="false">Todas</button>
+        </div><button type="button" class="btn" data-refresh>Actualizar</button></div>
+        <div id="solRows" class="cards"></div>
+      </div>
+
+      <div class="body" id="aRegs" hidden>
+        <dl class="tiles">
+          <div class="tile"><dt>Registrados</dt><dd id="tTot">0</dd></div>
+          <div class="tile p"><dt>Solicitudes pendientes</dt><dd id="tPen">0</dd></div>
+          <div class="tile a"><dt>Con acceso activo</dt><dd id="tApr">0</dd></div>
+          <div class="tile r"><dt>Vencen en 7 días</dt><dd id="tRec">0</dd></div>
+        </dl>
+        <div class="atools">
+          <div class="field search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="aq" type="search" placeholder="Buscar nombre, correo o número" aria-label="Buscar registros"></div>
+          <div class="seg" role="group" aria-label="Estado" id="segEst">
+            <button type="button" data-est="" aria-pressed="true">Todos</button>
+            <button type="button" data-est="Registrado" aria-pressed="false">Sin compra</button>
+            <button type="button" data-est="Aprobado" aria-pressed="false">Con acceso</button>
+            <button type="button" data-est="Vencido" aria-pressed="false">Vencidos</button>
+            <button type="button" data-est="Revocado" aria-pressed="false">Revocados</button>
+          </div>
+          <button type="button" class="btn" data-act="regNew">Agregar persona</button>
+          <button type="button" class="btn" data-refresh>Actualizar</button>
+        </div>
+        <div id="regNewBox"></div>
+        <div class="atable">
+          <div class="arow head"><span class="c-date">Fecha</span><span>Nombre</span><span class="c-mail">Correo</span><span class="c-wa">WhatsApp</span><span class="c-int">Accesos</span><span>Estado</span><span class="ta-r">Acciones</span></div>
+          <div id="aRows"></div>
+        </div>
+      </div>
+
+      <div class="body" id="aCars" hidden>
+        <div class="atools split">
+          <p class="note">Las carpetas que ve el público. Al guardar una carpeta con su enlace de Drive, su contenido se actualiza en la web al instante. Eliminarla aquí no borra nada de tu Drive.</p>
+          <button type="button" class="btn grad" data-act="carNew">Nueva carpeta</button>
+        </div>
+        <div id="carEditBox"></div>
+        <div class="atable">
+          <div class="crow head"><span></span><span>Carpeta</span><span class="c-tipo">Archivos</span><span class="c-precio">Precio</span><span class="c-vis">Visible</span><span class="ta-r">Acciones</span></div>
+          <div id="cRows"></div>
+        </div>
+      </div>
+
+      <div class="body" id="aAjs" hidden>
+        <form class="aj form" id="ajForm" novalidate>
+          <div class="panel w6 idxbox"><div><b>Contenido de Drive</b><p class="note" id="jIdx"></p></div><button type="button" class="btn" id="jReindex">Actualizar contenido ahora</button></div>
+          <label class="w6">Correo que recibe los avisos (registros y solicitudes de compra)<input id="jMail" type="email" placeholder="tucorreo@gmail.com"></label>
+          <label class="w3">WhatsApp de contacto (con código de país)<input id="jWa" inputmode="tel" placeholder="51987654321"></label>
+          <label class="w3">Moneda de los precios<input id="jMon" maxlength="6" placeholder="S/"></label>
+          <label class="w6">Dirección pública de la web<input id="jSite" type="url" placeholder="https://tuusuario.github.io/rcmusic"><span class="help">Se incluye en el correo que recibe el usuario al ser aprobado.</span></label>
+          <div class="w6 lbl">Imagen de fondo de la web
+            <div class="fondo-box">
+              <div class="fondo-prev" id="jPrev"><span>Sin imagen: solo luces animadas</span></div>
+              <div class="stack">
+                <input class="inp" id="jFondo" placeholder="Enlace de imagen o de Google Drive" aria-label="Enlace de la imagen de fondo">
+                <div class="row-start"><button type="button" class="btn sm" id="jFondoUp">Subir imagen</button><button type="button" class="btn sm" id="jFondoDel">Quitar imagen</button></div>
+                <span class="help">Una foto tuya de cabina o show. Se muestra difuminada detrás de toda la web.</span>
+              </div>
+            </div>
+          </div>
+          <label class="tick w6"><input type="checkbox" id="jLuces"><span>Mostrar las luces animadas sobre el fondo</span></label>
+          <label class="tick w6"><input type="checkbox" id="jDownloadAudio"><span>Mostrar iconos de descarga de archivos desde la web (audio, software y herramientas)</span></label>
+          <label class="tick w6"><input type="checkbox" id="jUser"><span>Enviar correos al usuario (solicitud recibida y acceso activado)</span></label>
+          <p class="note w6" id="jQuota"></p>
+          <div class="w6 row-end"><p class="err" id="jErr"></p><button type="button" class="btn" id="jCheck">Revisar vencimientos</button><button type="button" class="btn" id="jTest">Correo de prueba</button><button type="submit" class="btn grad" id="jSave">Guardar ajustes</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Video -->
+<div class="modal" id="vModal" role="dialog" aria-modal="true" aria-labelledby="vTitle">
+  <div class="sheet video-sheet">
+    <header class="shead"><h3 id="vTitle">Video</h3><button type="button" class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="video" id="vFrame"></div>
+    <div class="row-split pad"><span class="num" id="vMeta"></span><div class="row-end"><a class="btn" id="vOpen" href="#" target="_blank" rel="noopener">Abrir en Drive</a><a class="btn light" id="vDl" href="#" target="_blank" rel="noopener">Descargar</a></div></div>
+  </div>
+</div>
+
+<input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" hidden>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<script src="app.js?v=deleteorders1" defer></script>
+</body>
+</html>
