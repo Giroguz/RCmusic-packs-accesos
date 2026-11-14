@@ -934,7 +934,8 @@ function renderSols(){
       <div class="ra">${isP ? `<span class="mes">Duración <input type="number" min="0" max="120" value="${esc(s.meses ?? mesesDe(car))}" data-solmes="${esc(s.id)}" aria-label="Meses de acceso"> meses</span>
         <button type="button" class="btn sm grad" data-act="solOk" data-id="${esc(s.id)}">Aprobar y dar acceso</button>
         <button type="button" class="btn sm bad${A.armed==="s:"+s.id?" armed":""}" data-act="solNo" data-id="${esc(s.id)}">${A.armed==="s:"+s.id?"¿Rechazar?":"Rechazar"}</button>`
-        : `<span class="pill ${esc(s.estado)}">${esc(s.estado)}</span>${s.resuelto?`<span class="dim">${esc(fechaCorta(s.resuelto))}</span>`:""}`}</div>
+        : `<span class="pill ${esc(s.estado)}">${esc(s.estado)}</span>${s.resuelto?`<span class="dim">${esc(fechaCorta(s.resuelto))}</span>`:""}`}
+        <button type="button" class="btn sm bad${A.armed==="sdel:"+s.id?" armed":""}" data-act="solDel" data-id="${esc(s.id)}">${A.armed==="sdel:"+s.id?"¿Eliminar pedido?":"Eliminar pedido"}</button></div>
     </article>`;
   }).join("");
 }
@@ -997,7 +998,7 @@ function renderRegs(){
     acts.push(`<button type="button" class="btn sm ok" data-act="approve" data-id="${id}">${accs.length ? "Accesos" : "Dar acceso"}</button>`);
     if(x.estado === "Aprobado") acts.push(`<button type="button" class="btn sm" data-act="revocar" data-id="${id}">Revocar todo</button>`);
     acts.push(`<button type="button" class="btn sm" data-act="regEdit" data-id="${id}">Editar</button>`);
-    acts.push(`<button type="button" class="btn sm bad${A.armed===x.id?" armed":""}" data-act="eliminar" data-id="${id}">${A.armed===x.id?"¿Eliminar?":"Eliminar"}</button>`);
+    acts.push(`<button type="button" class="btn sm bad${A.armed===x.id?" armed":""}" data-act="eliminar" data-id="${id}">${A.armed===x.id?"¿Eliminar registro y pedidos?":"Eliminar"}</button>`);
     const extra = A.approve === x.id ? grantPanel(x) : A.editReg === x.id ? regForm(x) : "";
     const label = x.estado === "Registrado" ? "Sin compra" : x.estado;
     return `<div class="arow">
@@ -1136,11 +1137,11 @@ async function adminAction(btn){
     coverClear:()=>{ E.portada = ""; $("#cPortada").value = ""; refreshPreview(); }
   };
   if(simple[act]) return simple[act]();
-  const armKey = act==="carDel" ? "c:"+id : act==="quitarAcceso" ? "a:"+acc : act==="eliminar" ? id : act==="solNo" ? "s:"+id : null;
+  const armKey = act==="carDel" ? "c:"+id : act==="quitarAcceso" ? "a:"+acc : act==="eliminar" ? id : act==="solNo" ? "s:"+id : act==="solDel" ? "sdel:"+id : null;
   if(armKey && A.armed !== armKey){
     A.armed = armKey;
     if(act === "quitarAcceso"){ btn.classList.add("armed"); btn.textContent = "¿Quitar?"; }
-    else act === "carDel" ? renderCars() : act === "solNo" ? renderSols() : renderRegs();
+    else act === "carDel" ? renderCars() : (act === "solNo" || act === "solDel") ? renderSols() : renderRegs();
     clearTimeout(A.t); A.t = setTimeout(() => { A.armed = null; renderRegs(); renderCars(); renderSols(); }, 4000);
     return;
   }
@@ -1154,6 +1155,8 @@ async function adminAction(btn){
       toast(`Aprobada: acceso de lector a ${(r.carpetas||[]).join(", ")}` + (r.errores && r.errores.length ? ` · Falló: ${r.errores.join(", ")}` : ""), "ok");
     } else if(act === "solNo"){
       await adminCall("resolverSolicitud", { id, decision:"rechazar" }); A.armed = null; toast("Solicitud rechazada.");
+    } else if(act === "solDel"){
+      await adminCall("eliminarSolicitud", { id }); A.armed = null; toast("Pedido eliminado de Solicitudes.");
     } else if(act === "aprobar"){
       const items = [...panel.querySelectorAll("input[data-grant]:checked")].map(i => ({ carpeta:i.value, meses:Number(panel.querySelector(`[data-meses="${i.value}"]`).value)||0 }));
       if(!items.length){ if(perr) perr.textContent = "Elige al menos una carpeta."; busy(btn, false); return; }
