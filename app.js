@@ -1352,6 +1352,8 @@ function fromHash(){
    Inicio
    ===================================================================== */
 (async function init(){
+  // Despierta Apps Script mientras el visitante todavía está viendo la portada.
+  if(CONFIG.backend) fetch(CONFIG.backend + "?accion=ping", { mode:"no-cors", cache:"no-store" }).catch(() => {});
   $("#year").textContent = new Date().getFullYear();
   if(!store.get(CK.cat)) $("#packGrid").innerHTML = Array.from({length:6}, () => `<div class="sk pack-sk"></div>`).join("");
   bind(); bgLights(); scope();
