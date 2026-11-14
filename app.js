@@ -432,7 +432,7 @@ async function openPack(id, push){
   $("#fPriceNote").textContent = free ? "Gratis con tu cuenta" : durTxt(c) + (mesesDe(c) ? " · renovable" : "");
   $("#bbNote").textContent = free ? "Con tu cuenta" : durTxt(c);
   paintPackState();
-  if(push){ try{ history.replaceState(null,"","#pack-"+slug(c.nombre)); }catch(_){} }
+  if(push){ try{ history.pushState({__rcModal:"fModal",__rcPrevUrl:location.href},"","#pack-"+slug(c.nombre)); }catch(_){} }
   openModal("#fModal");
   $(".pcontent").scrollTop = 0; $(".pack-sheet").scrollTop = 0;
   const seq = ++F.req;
@@ -806,27 +806,44 @@ function restoreModal(id){
   const m=document.getElementById(id); if(!m) return;
   m.classList.remove("minimized"); m.classList.add("open"); document.body.classList.add("modal-open"); updateMinimizedTray();
 }
+function installBackNavigation(){
+  // La primera entrada protege la portada; las demás conservan navegación normal.
+  history.replaceState({__rcRoot:true},"",location.href);
+  history.pushState({__rcHome:true},"",location.href);
+  addEventListener("popstate", e => {
+    const m=topModal();
+    if(m) dismiss(m,true);
+    if(e.state && e.state.__rcRoot) history.pushState({__rcHome:true},"",location.href);
+  });
+}
 function openModal(sel){
   const m = typeof sel === "string" ? $(sel) : sel;
   installMinimizeControl(m); m.classList.remove("minimized"); updateMinimizedTray();
-  if(!m.classList.contains("open")){ focusStack.push(document.activeElement); m.classList.add("open"); }
+  if(!m.classList.contains("open")){ focusStack.push(document.activeElement); m.classList.add("open");
+    const reserved=history.state && history.state.__rcModal === m.id;
+    if(!reserved) history.pushState({__rcModal:m.id,__rcPrevUrl:location.href},"",location.href);
+  }
   document.body.classList.add("modal-open");
   setTimeout(() => {
     const f = m.id === "fModal" ? m.querySelector("[data-close]") : m.querySelector("form:not([hidden]) input:not([type=checkbox]):not([tabindex='-1']), [data-close]");
     if(f && !m.contains(document.activeElement)) f.focus({ preventScroll:true });
   }, 60);
 }
-function closeModal(m){
+function closeModal(m, fromPop=false){
   if(!m || (!m.classList.contains("open") && !m.classList.contains("minimized"))) return;
   m.classList.remove("open","minimized"); updateMinimizedTray();
   if(m.id === "vModal"){ $("#vFrame").innerHTML = ""; if(current && current.k === "v") $("#dockFrame").textContent = "Video cerrado · pulsa ▶ para verlo otra vez"; }
-  if(m.id === "fModal"){ F.req++; clearTimeout(F.poll); try{ history.replaceState(null,"",location.pathname+location.search); }catch(_){} }
+  if(m.id === "fModal"){ F.req++; clearTimeout(F.poll); }
+  if(!fromPop && history.state && history.state.__rcModal === m.id){
+    const prev=history.state.__rcPrevUrl || location.href;
+    try{ history.replaceState({__rcBackGuard:true},"",prev); }catch(_){}
+  }
   if(m.id === "aModal") stopPoll();
   if(!document.querySelector(".modal.open")) document.body.classList.remove("modal-open");
   const f = focusStack.pop(); if(f && f.focus && document.contains(f)) f.focus({ preventScroll:true });
 }
-function dismiss(m){
-  closeModal(m);
+function dismiss(m, fromPop=false){
+  closeModal(m,fromPop);
   if(m && (m.id === "mModal" || m.id === "rModal")) setTimeout(() => { if(!$("#mModal").classList.contains("open") && !$("#rModal").classList.contains("open")) PEND = null; }, 60);
 }
 const topModal = () => { const o = $$(".modal.open"); return o.sort((a,b) => (+getComputedStyle(a).zIndex) - (+getComputedStyle(b).zIndex)).pop(); };
@@ -1368,7 +1385,7 @@ function fromHash(){
   if(CONFIG.backend) fetch(CONFIG.backend + "?accion=ping", { mode:"no-cors", cache:"no-store" }).catch(() => {});
   $("#year").textContent = new Date().getFullYear();
   if(!store.get(CK.cat)) $("#packGrid").innerHTML = Array.from({length:6}, () => `<div class="sk pack-sk"></div>`).join("");
-  bind(); bgLights(); scope();
+  bind(); installBackNavigation(); bgLights(); scope();
   const cat = loadCatalog();
   loadIndex();                 // en paralelo: lista de contenido de todos los packs
   if(U.token) loadCuenta();    // en paralelo: sesión del usuario y sus packs
