@@ -67,7 +67,7 @@ function coverUrl(v){
 }
 
 /* ---------- Formatos ---------- */
-let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true };
+let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true };
 const wa = () => AJ.whatsapp || CONFIG.whatsapp;
 const money = p => Number(p) > 0 ? `${AJ.moneda || CONFIG.moneda} ${Number(p).toFixed(2)}` : "Gratis";
 const MODS = { "Único":0, "Mensual":1, "Anual":12, "Personalizado":null };
@@ -328,7 +328,7 @@ async function demoApi(accion, d){
     case "guardarAjustes": { tok(); const a = d.ajustes;
       if(a.correoAvisos && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.correoAvisos)) throw new Error("El correo para avisos no es válido.");
       if(a.sitio && !/^https:\/\//.test(a.sitio)) throw new Error("La dirección de la web debe empezar con https://");
-      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false };
+      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false, descargasCanciones:a.descargasCanciones!==false };
       store.set(DK.aj, aj); return { ok:true, ajustes:aj }; }
     case "probarCorreo": tok(); throw new Error("En modo demostración no se envían correos. Conecta el servidor para probarlo.");
   }
@@ -345,7 +345,7 @@ const CK = { cat:"rc5_cat", idx:"rc5_idx", mail:"rc5_mail", user:"rc5_user", own
 function applyCatalog(r){
   CARP = r.carpetas || [];
   const aj = r.ajustes || {};
-  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false };
+  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false };
   applyFondo(); renderPacks(); renderHome();
 }
 async function loadCatalog(force){
@@ -568,11 +568,12 @@ function fileRow(f){
   const lead = playable && !locked
     ? `<button type="button" class="fthumb" data-play="${esc(f.id)}" aria-label="${on?"Detener":"Reproducir"} ${esc(f.nombre)}">${icon}</button>`
     : `<span class="fthumb"${locked?' title="Disponible al comprar el pack"':""}>${icon}</span>`;
-  const lk = (u,l,ic) => `<a class="ico" href="${demo?"#":u}" ${demo?'data-demo="1"':'target="_blank" rel="noopener"'} aria-label="${l}" title="${l}">${ic}</a>`;
+  const lk = (u,l,ic,cls="") => `<a class="ico ${cls}" href="${demo?"#":u}" ${demo?'data-demo="1"':'target="_blank" rel="noopener"'} aria-label="${l}" title="${l}">${ic}</a>`;
+  const downloadSong = f.k !== "a" || AJ.descargasCanciones !== false;
   return `<div class="frow${on?" playing":""}${locked?" locked":""}">${lead}
     <div class="ti"><div class="name">${esc(f.nombre.replace(/\.[^.]+$/,""))}</div><div class="sub"><span class="kind">${esc((ext(f.nombre)||"archivo").toUpperCase())}</span></div></div>
     <span class="bpm${f.bpm?"":" none"}">${f.bpm ? esc(f.bpm.txt)+" bpm" : "—"}</span>
-    <div class="racts">${locked ? "" : lk(D.view(f.id),"Abrir en Google Drive",I.open) + lk(D.dl(f.id),"Descargar",I.dl)}</div>
+    <div class="racts">${locked ? "" : lk(D.view(f.id),"Abrir en Google Drive",I.open) + (downloadSong ? lk(D.dl(f.id),"Descargar canción",I.dl) : "")}</div>
   </div>`;
 }
 
@@ -1073,7 +1074,7 @@ async function uploadImage(file){
 const J = { fondo:"" };
 function fillAjustes(){
   $("#jMail").value = A.aj.correoAvisos || ""; $("#jWa").value = A.aj.whatsapp || ""; $("#jSite").value = A.aj.sitio || "";
-  $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false;
+  $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false; $("#jDownloadAudio").checked = A.aj.descargasCanciones !== false;
   J.fondo = A.aj.fondo || ""; paintFondoPrev();
   const tot = Object.values(A.conteos||{}).reduce((t,n)=>t+(Number(n)||0),0);
   $("#jIdx").textContent = A.indexado ? `Actualizado ${hace(A.indexado)} · ${fmtNum(tot)} archivos. Revisa cambios en Drive cada 10 minutos.` : "Aún no se ha generado. Pulsa “Actualizar contenido ahora”.";
@@ -1089,8 +1090,8 @@ async function saveAjustes(e){
   const err = $("#jErr"), b = $("#jSave"); err.textContent = ""; busy(b, true);
   try{
     const r = await adminCall("guardarAjustes", { ajustes:{ correoAvisos:$("#jMail").value.trim(), whatsapp:$("#jWa").value, sitio:$("#jSite").value.trim(),
-      moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked } });
-    A.aj = r.ajustes; toast("Ajustes guardados.", "ok"); loadCatalog(true);
+      moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked, descargasCanciones:$("#jDownloadAudio").checked } });
+    A.aj = r.ajustes; toast("Ajustes guardados.", "ok"); await loadCatalog(true); if(F.c && F.tree && $("#fModal").classList.contains("open")) renderTree();
   }catch(ex){ err.textContent = ex.message; }
   finally{ busy(b, false); }
 }
