@@ -569,7 +569,7 @@ function fileRow(f){
     ? `<button type="button" class="fthumb" data-play="${esc(f.id)}" aria-label="${on?"Detener":"Reproducir"} ${esc(f.nombre)}">${icon}</button>`
     : `<span class="fthumb"${locked?' title="Disponible al comprar el pack"':""}>${icon}</span>`;
   const lk = (u,l,ic,cls="") => `<a class="ico ${cls}" href="${demo?"#":u}" ${demo?'data-demo="1"':'target="_blank" rel="noopener"'} aria-label="${l}" title="${l}">${ic}</a>`;
-  const downloadSong = f.k !== "a" || AJ.descargasCanciones !== false;
+  const downloadSong = AJ.descargasCanciones !== false;
   return `<div class="frow${on?" playing":""}${locked?" locked":""}">${lead}
     <div class="ti"><div class="name">${esc(f.nombre.replace(/\.[^.]+$/,""))}</div><div class="sub"><span class="kind">${esc((ext(f.nombre)||"archivo").toUpperCase())}</span></div></div>
     <span class="bpm${f.bpm?"":" none"}">${f.bpm ? esc(f.bpm.txt)+" bpm" : "—"}</span>
