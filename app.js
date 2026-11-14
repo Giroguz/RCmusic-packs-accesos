@@ -1082,7 +1082,7 @@ async function uploadImage(file){
   try{
     const dataUrl = await resizeImage(file, fondo ? 1600 : 1000);
     const r = await adminCall("subirPortada", { nombre:(fondo ? "Fondo web" : file.name.replace(/\.[^.]+$/,"")) + ".jpg", datos:dataUrl.split(",")[1], mime:"image/jpeg" });
-    if(fondo){ J.fondo = r.url; paintFondoPrev(); toast("Imagen lista. Pulsa “Guardar ajustes” para publicarla.", "ok"); }
+    if(fondo){ J.fondo = r.url; J.dirty = true; paintFondoPrev(); toast("Imagen lista. Pulsa “Guardar ajustes” para publicarla.", "ok"); }
     else { E.portada = r.url; $("#cPortada").value = /^data:/.test(r.url) ? "Imagen subida desde tu equipo" : r.url; refreshPreview(); toast("Portada lista. Recuerda guardar la carpeta.", "ok"); }
   }catch(ex){ toast(ex.message, "err"); }
 }
@@ -1090,6 +1090,7 @@ async function uploadImage(file){
 /* ---------- Ajustes ---------- */
 const J = { fondo:"" };
 function fillAjustes(){
+  if(J.dirty) return; // no borrar cambios mientras se edita por un refresco automático
   $("#jMail").value = A.aj.correoAvisos || ""; $("#jWa").value = A.aj.whatsapp || ""; $("#jSite").value = A.aj.sitio || "";
   $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false; $("#jDownloadAudio").checked = A.aj.descargasCanciones !== false;
   J.fondo = A.aj.fondo || ""; paintFondoPrev();
@@ -1108,7 +1109,13 @@ async function saveAjustes(e){
   try{
     const r = await adminCall("guardarAjustes", { ajustes:{ correoAvisos:$("#jMail").value.trim(), whatsapp:$("#jWa").value, sitio:$("#jSite").value.trim(),
       moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked, descargasCanciones:$("#jDownloadAudio").checked } });
-    A.aj = r.ajustes; toast("Ajustes guardados.", "ok"); await loadCatalog(true); if(F.c && F.tree && $("#fModal").classList.contains("open")) renderTree();
+    A.aj = r.ajustes; J.dirty = false;
+    applyCatalog({ carpetas:CARP, ajustes:r.ajustes });
+    store.set(CK.cat, { t:Date.now(), v:{ carpetas:CARP, ajustes:r.ajustes } });
+    if(F.c && F.tree && $("#fModal").classList.contains("open")) renderTree();
+    toast("Ajustes guardados.", "ok");
+    // El guardado ya fue confirmado: no bloquear el botón mientras se refresca el catálogo.
+    loadCatalog(true);
   }catch(ex){ err.textContent = ex.message; }
   finally{ busy(b, false); }
 }
@@ -1352,6 +1359,8 @@ function bind(){
   $("#aq").addEventListener("input", e => { A.q = e.target.value; renderRegs(); });
   $$("#segEst button").forEach(b => b.addEventListener("click", () => { A.est = b.dataset.est; $$("#segEst button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderRegs(); }));
   $$("#segSol button").forEach(b => b.addEventListener("click", () => { A.solF = b.dataset.sol; $$("#segSol button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderSols(); }));
+  $("#ajForm").addEventListener("input", () => { J.dirty = true; });
+  $("#ajForm").addEventListener("change", () => { J.dirty = true; });
   $("#ajForm").addEventListener("submit", saveAjustes);
   $("#jTest").addEventListener("click", async () => { const b = $("#jTest"); $("#jErr").textContent = ""; busy(b, true);
     try{ const r = await adminCall("probarCorreo"); toast(`Correo de prueba enviado a ${r.correo}.`, "ok"); }catch(ex){ $("#jErr").textContent = ex.message; } finally{ busy(b, false); } });
@@ -1362,7 +1371,7 @@ function bind(){
     catch(ex){ $("#jErr").textContent = ex.message; } finally{ busy(b, false); } });
   $("#fileIn").addEventListener("change", e => uploadImage(e.target.files[0]));
   $("#jFondoUp").addEventListener("click", () => { FILE_TARGET = "fondo"; $("#fileIn").value = ""; $("#fileIn").click(); });
-  $("#jFondoDel").addEventListener("click", () => { J.fondo = ""; paintFondoPrev(); });
+  $("#jFondoDel").addEventListener("click", () => { J.fondo = ""; J.dirty = true; paintFondoPrev(); });
   $("#jFondo").addEventListener("input", e => { J.fondo = e.target.value.trim(); clearTimeout(J.t); J.t = setTimeout(paintFondoPrev, 400); });
   addEventListener("hashchange", fromHash);
   // Resalta la sección visible en el menú y en la barra inferior
