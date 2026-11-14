@@ -592,3 +592,20 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 @keyframes downloadCall{0%,100%{filter:brightness(1);box-shadow:0 0 0 0 rgba(47,216,230,.48),0 0 12px rgba(47,216,230,.32);transform:scale(1)}50%{filter:brightness(1.65);box-shadow:0 0 0 7px rgba(47,216,230,0),0 0 24px rgba(47,216,230,.75);transform:scale(1.06)}}
 @media(max-width:700px){.minimized-tray{bottom:calc(12px + var(--tabbar));left:12px;right:12px;max-width:none}.minimized-chip{max-width:100%}.minimized-chip .btn{max-width:min(62vw,220px);overflow:hidden;text-overflow:ellipsis}.pack-sheet>.minimize-float{position:absolute;top:12px;right:60px}}
 @media(prefers-reduced-motion:reduce){.drive-download-attn{animation:none!important;outline:2px solid rgba(47,216,230,.8);outline-offset:2px;box-shadow:0 0 18px rgba(47,216,230,.55)!important}}
+
+/* Botones de minimizar/cerrar compactos y con espacio reservado para títulos */
+.minimize-float,.close-float,.shead .minimize-float,.shead [data-close]{width:34px;height:34px;min-width:34px;padding:0;border-radius:9px;display:grid;place-items:center}
+.minimize-float svg,.close-float svg,.shead .minimize-float svg,.shead [data-close] svg{width:15px;height:15px}
+.shead{gap:8px}
+.shead h3{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shead .minimize-float{margin-left:0;flex:none}
+.shead [data-close]{order:3;flex:none}
+.pack-sheet .close-float{top:10px;right:10px}
+.pack-sheet>.minimize-float{top:10px;right:52px}
+.pack-sheet .ptools{padding-right:148px}
+.pack-sheet .pcount{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:700px){
+  .pack-sheet>.minimize-float{top:max(10px,env(safe-area-inset-top));right:52px;width:34px;height:34px;margin:10px 0 -48px 0}
+  .pack-sheet .close-float{top:max(10px,env(safe-area-inset-top));right:10px;width:34px;height:34px}
+  .pack-sheet .ptools{padding-right:100px}
+}
