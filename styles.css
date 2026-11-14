@@ -114,7 +114,7 @@ nav.main a:hover,nav.main a.on{color:var(--ink);background:rgba(255,255,255,.05)
   -webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,transparent,#000 18%,#000 55%,transparent),radial-gradient(130% 100% at 70% 45%,#000 50%,transparent 85%);mask-composite:intersect}
 .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,7,15,.88),rgba(5,7,15,.45) 48%,rgba(5,7,15,.2))}
 .scope-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,15,.55),transparent 18%,transparent 66%,rgba(5,7,15,.6) 80%,transparent 84%)}
-.scope canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.5;mix-blend-mode:screen}
+.scope canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.95;mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(47,216,230,.45))}
 .scope .hud{position:absolute;left:18px;right:18px;top:16px;display:flex;justify-content:space-between;font:11px var(--f-mono);color:var(--mute);letter-spacing:.08em}
 .scope .hud .live{color:var(--mag)}
 .scope .disc{position:absolute;right:18px;top:42px;width:64px;height:64px}
@@ -574,3 +574,21 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+
+/* Controles para minimizar y recuperar las ventanas sin perder su contenido */
+.modal.minimized{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+.modal.minimized .sheet{transform:translateY(20px) scale(.96)}
+.minimize-float{position:absolute;top:12px;right:60px;z-index:8}
+.minimize-float svg{width:18px;height:18px}
+.shead .minimize-float{position:static;order:2;margin-left:auto}
+.shead [data-close]{order:3}
+.minimized-tray{position:fixed;right:16px;bottom:calc(18px + var(--tabbar));z-index:90;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:min(90vw,520px);pointer-events:auto}
+.minimized-chip{display:flex;align-items:center;gap:4px;padding:4px;background:rgba(11,15,29,.97);border:1px solid var(--cyan);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.minimized-chip .btn{border:0;background:transparent;max-width:220px}
+.minimized-chip .x{width:32px;height:32px}
+.minimized-tray svg{width:15px;height:15px}
+.drive-download-attn{color:#7ff8ff!important;border-color:rgba(47,216,230,.65)!important;box-shadow:0 0 18px rgba(47,216,230,.38);animation:downloadCall 1.6s ease-in-out infinite}
+@keyframes downloadCall{0%,100%{filter:brightness(1);box-shadow:0 0 0 0 rgba(47,216,230,.48),0 0 12px rgba(47,216,230,.32);transform:scale(1)}50%{filter:brightness(1.65);box-shadow:0 0 0 7px rgba(47,216,230,0),0 0 24px rgba(47,216,230,.75);transform:scale(1.06)}}
+@media(max-width:700px){.minimized-tray{bottom:calc(12px + var(--tabbar));left:12px;right:12px;max-width:none}.minimized-chip{max-width:100%}.minimized-chip .btn{max-width:min(62vw,220px);overflow:hidden;text-overflow:ellipsis}.pack-sheet>.minimize-float{position:absolute;top:12px;right:60px}}
+@media(prefers-reduced-motion:reduce){.drive-download-attn{animation:none!important;outline:2px solid rgba(47,216,230,.8);outline-offset:2px;box-shadow:0 0 18px rgba(47,216,230,.55)!important}}

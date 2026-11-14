@@ -111,6 +111,7 @@ const I = {
   play:'<svg viewBox="0 0 24 24"><path class="fill" d="M7 4v16l13-8z"/></svg>',
   pause:'<svg viewBox="0 0 24 24"><path class="fill" d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
   open:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+  minimize:'<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
   dl:'<svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>',
   folder:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
   file:'<svg viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg>',
@@ -489,7 +490,7 @@ function paintPackState(r){
   });
   $("#buybar").hidden = on;
   const drive = (F.own && F.tree && F.tree.d) ? D.folder(F.tree.d) : ((r && r.drive) || F.drive);
-  $("#fDrive").hidden = !(on && drive); if(drive) $("#fDrive").href = drive;
+  $("#fDrive").hidden = !(on && drive); $("#fDrive").classList.toggle("drive-download-attn", !!(on && drive)); if(drive) $("#fDrive").href = drive;
 }
 // Árbol → grupos (archivos sueltos primero, luego cada subcarpeta), ordenado por BPM
 function buildGroups(){
@@ -541,7 +542,7 @@ function renderTree(){
   L.innerHTML = vis.map(([g,i]) => {
     if(!g.ruta.length) return g.files.length ? `<div class="rows" data-rows="${i}">${rowsFor(i, g.files)}</div>` : "";
     const open = isOpen(g), name = g.ruta[g.ruta.length-1];
-    const link = F.own && g.d && !isDemoId(g.d) ? `<a class="ico" href="${D.folder(g.d)}" target="_blank" rel="noopener" title="Abrir esta carpeta en Drive (descargar todo)" aria-label="Abrir ${esc(name)} en Google Drive">${I.open}</a>` : "";
+    const link = F.own && g.d && !isDemoId(g.d) ? `<a class="ico drive-download-attn" href="${D.folder(g.d)}" target="_blank" rel="noopener" title="Abrir carpeta en Google Drive para descargar todo" aria-label="Abrir ${esc(name)} en Google Drive">${I.open}</a>` : "";
     const cnt = g.deep ? (F.q && g.hit !== g.deep ? `${g.hit} de ${g.deep}` : fmtNum(g.deep)) + ` archivo${g.deep===1?"":"s"}` : "vacía";
     return `<div class="fgroup${open?" open":""}" style="--lvl:${g.nivel-1}" id="fg-${i}">
       <div class="fhead"><button type="button" class="fsum" data-group="${esc(g.key)}" aria-expanded="${open}">${I.chev}<span class="fic">${I.folder}</span><span class="gname">${esc(name)}</span><small>${cnt}</small></button>${link}</div>
@@ -778,8 +779,35 @@ function refreshRows(){
    Ventanas (animadas, con foco controlado)
    ===================================================================== */
 const focusStack = [];
+function installMinimizeControl(m){
+  const sheet = m.querySelector(".sheet"); if(!sheet || sheet.querySelector("[data-minimize]")) return;
+  const b = document.createElement("button"); b.type = "button"; b.className = "x minimize-float"; b.dataset.minimize = "1";
+  b.setAttribute("aria-label","Minimizar ventana"); b.title = "Minimizar ventana"; b.innerHTML = I.minimize;
+  const close = sheet.querySelector("[data-close]");
+  if(m.id === "fModal") sheet.appendChild(b);
+  else if(close && close.parentElement) close.parentElement.insertBefore(b, close);
+  else sheet.appendChild(b);
+}
+function updateMinimizedTray(){
+  let tray = document.getElementById("minimizedTray");
+  const minis = $$(".modal.minimized");
+  if(!minis.length){ if(tray) tray.remove(); return; }
+  if(!tray){ tray = document.createElement("div"); tray.id="minimizedTray"; tray.className="minimized-tray"; tray.setAttribute("aria-label","Ventanas minimizadas"); document.body.appendChild(tray); }
+  tray.innerHTML = minis.map(m => { const id=m.id, title=(document.getElementById(m.getAttribute("aria-labelledby"))?.textContent||"Ventana").trim(); return `<button type="button" class="btn sm" data-restore="${esc(id)}" aria-label="Restaurar ${esc(title)}">${I.minimize}<span>${esc(title)}</span></button>`; }).join("");
+}
+function minimizeModal(m){
+  if(!m || !m.classList.contains("open")) return;
+  m.classList.remove("open"); m.classList.add("minimized");
+  if(!document.querySelector(".modal.open")) document.body.classList.remove("modal-open");
+  updateMinimizedTray();
+}
+function restoreModal(id){
+  const m=document.getElementById(id); if(!m) return;
+  m.classList.remove("minimized"); m.classList.add("open"); document.body.classList.add("modal-open"); updateMinimizedTray();
+}
 function openModal(sel){
   const m = typeof sel === "string" ? $(sel) : sel;
+  installMinimizeControl(m); m.classList.remove("minimized"); updateMinimizedTray();
   if(!m.classList.contains("open")){ focusStack.push(document.activeElement); m.classList.add("open"); }
   document.body.classList.add("modal-open");
   setTimeout(() => {
@@ -788,8 +816,8 @@ function openModal(sel){
   }, 60);
 }
 function closeModal(m){
-  if(!m || !m.classList.contains("open")) return;
-  m.classList.remove("open");
+  if(!m || (!m.classList.contains("open") && !m.classList.contains("minimized"))) return;
+  m.classList.remove("open","minimized"); updateMinimizedTray();
   if(m.id === "vModal"){ $("#vFrame").innerHTML = ""; if(current && current.k === "v") $("#dockFrame").textContent = "Video cerrado · pulsa ▶ para verlo otra vez"; }
   if(m.id === "fModal"){ F.req++; clearTimeout(F.poll); try{ history.replaceState(null,"",location.pathname+location.search); }catch(_){} }
   if(m.id === "aModal") stopPoll();
@@ -1212,8 +1240,8 @@ function scope(){
       for(let i=0;i<N;i++){
         const f = i/N;
         let v = 0.18 + 0.5*Math.exp(-f*2.2)*(0.6+0.4*Math.sin(i*0.9+t*1.3)) + 0.12*Math.sin(i*0.37+t*2.1);
-        v *= live ? (0.75 + 0.45*beat) : 0.5;
-        ctx.fillStyle = `rgba(${lerp(47,209,f)},${lerp(216,47,f)},${lerp(230,208,f)},${live?.95:.35})`;
+        v *= live ? (0.88 + 0.45*beat) : 0.8;
+        ctx.fillStyle = `rgba(${lerp(47,209,f)},${lerp(216,47,f)},${lerp(230,208,f)},${live?1:.78})`;
         for(let y=0;y<Math.max(2, v*h*0.5);y+=4) ctx.fillRect(18+i*bw+1, base-y-2, Math.max(1,bw-3), 2);
       }
       t += live ? 0.016 : 0.006;
@@ -1231,6 +1259,9 @@ function scope(){
 function bind(){
   document.addEventListener("click", e => {
     const t = e.target;
+    const closeMin = t.closest("[data-close-min]"); if(closeMin){ closeModal(document.getElementById(closeMin.dataset.closeMin)); return; }
+    const restore = t.closest("[data-restore]"); if(restore){ restoreModal(restore.dataset.restore); return; }
+    const mini = t.closest("[data-minimize]"); if(mini){ minimizeModal(mini.closest(".modal")); return; }
     const o = t.closest("[data-open]"); if(o){ e.preventDefault(); openSection(o.dataset.open); return; }
     const by = t.closest("[data-buy]"); if(by){ const m = t.closest("#mModal"); if(m) closeModal(m); buy(by.dataset.buy); return; }
     const pk = t.closest("[data-pack]"); if(pk){ const m = t.closest("#mModal"); if(m) closeModal(m); openPack(pk.dataset.pack, true); return; }
