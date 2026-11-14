@@ -1236,7 +1236,7 @@ function scope(){
     if(vis && !document.body.classList.contains("modal-open")){
       const w = c.clientWidth, h = c.clientHeight;
       ctx.clearRect(0,0,w,h);
-      const live = !!current, bw = (w-36)/N, base = h*0.66, bpm = current && current.bpm ? current.bpm.ini : 120;
+      const live = !!current, bw = (w-36)/N, base = h*0.56, bpm = current && current.bpm ? current.bpm.ini : 120;
       const beat = Math.pow(Math.max(0, Math.sin(t*bpm/60*Math.PI)), 8);
       for(let i=0;i<N;i++){
         const f = i/N;
