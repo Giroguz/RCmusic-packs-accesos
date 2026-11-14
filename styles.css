@@ -354,7 +354,20 @@ button.fthumb:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .form textarea{min-height:88px;padding:11px 13px;resize:vertical;line-height:1.45}
 .inp:focus,.form input:focus,.form select:focus,.form textarea:focus{outline:0;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(47,216,230,.15)}
 .help{font:12.5px var(--f-body);color:var(--mute);text-transform:none;letter-spacing:0}
-.phone{display:grid;grid-template-columns:132px 1fr;gap:8px;align-items:start}\n.country-picker{position:relative;min-width:0}\n.country-current{display:flex;align-items:center;justify-content:flex-start;gap:8px;cursor:pointer;text-transform:none}\n.country-flag{display:inline-flex;align-items:center;justify-content:center;width:26px;min-width:26px;height:20px;line-height:1}.country-flag img{display:block;width:25px;height:17px;object-fit:cover;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.18)}\n.country-current .country-code{font-weight:600;white-space:nowrap}\n.country-current svg{width:16px;height:16px;margin-left:auto;color:var(--mute)}\n.country-menu{position:absolute;left:0;right:auto;width:220px;max-width:min(85vw,260px);top:calc(100% + 6px);z-index:120;max-height:260px;overflow:auto;padding:5px;background:#090c17;border:1px solid var(--cyan);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.65)}\n.country-menu[hidden]{display:none!important}\n.country-menu button{width:100%;display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:9px 8px;border:0;border-radius:8px;background:transparent;color:var(--ink);text-align:left;cursor:pointer}\n.country-menu button:hover,.country-menu button[aria-selected=true]{background:rgba(47,216,230,.13)}\n.country-menu button>span{font-size:19px}\n.country-menu button b{font-size:13px;font-weight:550}\n.country-menu button small{font:12px var(--f-mono);color:var(--cyan)}\n@media(max-width:520px){.phone{grid-template-columns:112px minmax(0,1fr);gap:6px}.country-current{gap:5px;padding:0 9px}.country-current .country-flag{font-size:18px}.country-current .country-code{font-size:14px}}
+.phone{display:grid;grid-template-columns:132px 1fr;gap:8px;align-items:start}
+.country-picker{position:relative;min-width:0}
+.country-current{display:flex;align-items:center;justify-content:flex-start;gap:8px;cursor:pointer;text-transform:none}
+.country-flag{display:inline-flex;align-items:center;justify-content:center;width:26px;min-width:26px;height:20px;line-height:1}.country-flag img{display:block;width:25px;height:17px;object-fit:cover;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.18)}
+.country-current .country-code{font-weight:600;white-space:nowrap}
+.country-current svg{width:16px;height:16px;margin-left:auto;color:var(--mute)}
+.country-menu{position:absolute;left:0;right:auto;width:220px;max-width:min(85vw,260px);top:calc(100% + 6px);z-index:120;max-height:260px;overflow:auto;padding:5px;background:#090c17;border:1px solid var(--cyan);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.65)}
+.country-menu[hidden]{display:none!important}
+.country-menu button{width:100%;display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:9px 8px;border:0;border-radius:8px;background:transparent;color:var(--ink);text-align:left;cursor:pointer}
+.country-menu button:hover,.country-menu button[aria-selected=true]{background:rgba(47,216,230,.13)}
+.country-menu button>span{font-size:19px}
+.country-menu button b{font-size:13px;font-weight:550}
+.country-menu button small{font:12px var(--f-mono);color:var(--cyan)}
+@media(max-width:520px){.phone{grid-template-columns:112px minmax(0,1fr);gap:6px}.country-current{gap:5px;padding:0 9px}.country-current .country-flag{font-size:18px}.country-current .country-code{font-size:14px}}
 .money{display:grid;grid-template-columns:auto 1fr;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;min-height:46px;padding-left:13px}
 .money:focus-within{border-color:var(--cyan)}
 .money b{font:500 14px var(--f-mono);color:var(--mute);text-transform:none;letter-spacing:0}
