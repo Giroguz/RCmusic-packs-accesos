@@ -1260,6 +1260,11 @@ function scope(){
 function bind(){
   document.addEventListener("click", e => {
     const t = e.target;
+    const countryBtn = t.closest("#rPaisBtn");
+    if(countryBtn){ const menu=$("#rPaisMenu"), open=menu.hidden; menu.hidden=!open; countryBtn.setAttribute("aria-expanded",String(open)); if(open){ const selected=menu.querySelector('[aria-selected="true"]')||menu.querySelector('[role="option"]'); if(selected) selected.focus(); } return; }
+    const countryOpt = t.closest("#rPaisMenu [data-country]");
+    if(countryOpt){ const code=countryOpt.dataset.country, flag=countryOpt.dataset.flag, sel=$("#rPais"), menu=$("#rPaisMenu"); sel.value=code; menu.querySelectorAll("[data-country]").forEach(o=>o.setAttribute("aria-selected",String(o===countryOpt))); $("#rPaisBtn .country-flag").innerHTML=`<img src="${esc(countryOpt.dataset.flagImg)}" alt="" aria-hidden="true">`; $("#rPaisBtn .country-code").textContent="+"+code; menu.hidden=true; $("#rPaisBtn").setAttribute("aria-expanded","false"); sel.dispatchEvent(new Event("change",{bubbles:true})); $("#rPaisBtn").focus(); return; }
+    if(!t.closest("#countryPicker")){ const menu=$("#rPaisMenu"), btn=$("#rPaisBtn"); if(menu && !menu.hidden){ menu.hidden=true; btn.setAttribute("aria-expanded","false"); } }
     const closeMin = t.closest("[data-close-min]"); if(closeMin){ closeModal(document.getElementById(closeMin.dataset.closeMin)); return; }
     const restore = t.closest("[data-restore]"); if(restore){ restoreModal(restore.dataset.restore); return; }
     const mini = t.closest("[data-minimize]"); if(mini){ minimizeModal(mini.closest(".modal")); return; }
@@ -1287,6 +1292,13 @@ function bind(){
   document.addEventListener("pointerenter", pre, true); document.addEventListener("touchstart", pre, { passive:true, capture:true });
   // Grupos grandes: las filas se dibujan al abrirlos
   document.addEventListener("keydown", e => {
+    const menu=$("#rPaisMenu"), countryBtn=$("#rPaisBtn");
+    if(menu && !menu.hidden){
+      const opts=[...menu.querySelectorAll('[role="option"]')], idx=opts.indexOf(document.activeElement);
+      if(e.key==="Escape"){ menu.hidden=true; countryBtn.setAttribute("aria-expanded","false"); countryBtn.focus(); e.preventDefault(); return; }
+      if(e.key==="ArrowDown" || e.key==="ArrowUp"){ const step=e.key==="ArrowDown"?1:-1; opts[(idx+step+opts.length)%opts.length].focus(); e.preventDefault(); return; }
+      if(e.key==="Enter" && document.activeElement.matches('[data-country]')){ document.activeElement.click(); e.preventDefault(); return; }
+    }
     const m = topModal();
     if(e.key === "Escape" && m){ dismiss(m); return; }
     if(e.key === "Tab" && m){ // mantiene el foco dentro de la ventana
