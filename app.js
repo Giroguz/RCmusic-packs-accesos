@@ -120,8 +120,8 @@ const I = {
   wa:'<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.7-1.1-4.4-3.9-4.6-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.6-.1 1.2z"/></svg>'
 };
 // Arte de portada según el tipo de pack (si el administrador no subió una portada propia)
-const ART = { generos:"img/cover-generos.webp", transiciones:"img/cover-transiciones.webp", intros:"img/cover-intros.webp",
-              mashups:"img/cover-mashups.webp", samples:"img/cover-samples.webp", programas:"img/cover-programas.webp" };
+const ART = { generos:"cover-generos.webp", transiciones:"cover-transiciones.webp", intros:"cover-intros.webp",
+              mashups:"cover-mashups.webp", samples:"cover-samples.webp", programas:"cover-programas.webp" };
 function artFor(c){
   const t = ((c.nombre||"") + " " + (c.tipo||"")).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
   if(/transici/.test(t)) return ART.transiciones;

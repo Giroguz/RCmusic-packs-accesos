@@ -109,7 +109,7 @@ nav.main a:hover,nav.main a.on{color:var(--ink);background:rgba(255,255,255,.05)
 .scope-img{position:absolute;left:0;right:0;top:0;width:100%;height:calc(100% - 64px);object-fit:cover;object-position:50% 50%;transform:scale(1.02);animation:kb 22s ease-in-out infinite alternate}
 @keyframes kb{to{transform:scale(1.08) translateY(-1%)}}
 .hero-bg{position:absolute;z-index:-1;top:calc(-1 * var(--top));bottom:-80px;left:50%;width:100vw;transform:translateX(-50%);pointer-events:none;
-  background:url(img/foto-fondo.webp) center 70%/cover no-repeat;opacity:.8;filter:saturate(1.2);
+  background:url(foto-fondo.webp) center 70%/cover no-repeat;opacity:.8;filter:saturate(1.2);
   -webkit-mask-image:linear-gradient(180deg,transparent,#000 18%,#000 55%,transparent),radial-gradient(130% 100% at 70% 45%,#000 50%,transparent 85%);
   -webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,transparent,#000 18%,#000 55%,transparent),radial-gradient(130% 100% at 70% 45%,#000 50%,transparent 85%);mask-composite:intersect}
 .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,7,15,.88),rgba(5,7,15,.45) 48%,rgba(5,7,15,.2))}
