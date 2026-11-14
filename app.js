@@ -573,7 +573,7 @@ function fileRow(f){
   return `<div class="frow${on?" playing":""}${locked?" locked":""}">${lead}
     <div class="ti"><div class="name">${esc(f.nombre.replace(/\.[^.]+$/,""))}</div><div class="sub"><span class="kind">${esc((ext(f.nombre)||"archivo").toUpperCase())}</span></div></div>
     <span class="bpm${f.bpm?"":" none"}">${f.bpm ? esc(f.bpm.txt)+" bpm" : "—"}</span>
-    <div class="racts">${locked ? "" : lk(D.view(f.id),"Abrir en Google Drive",I.open) + (downloadSong ? lk(D.dl(f.id),"Descargar canción",I.dl) : "")}</div>
+    <div class="racts">${locked ? "" : lk(D.view(f.id),"Abrir en Google Drive",I.open) + (downloadSong ? lk(D.dl(f.id),f.k === "a" ? "Descargar canción" : "Descargar",I.dl) : "")}</div>
   </div>`;
 }
 
