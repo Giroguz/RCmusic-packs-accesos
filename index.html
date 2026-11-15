@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=flags3">
+<link rel="stylesheet" href="styles.css?v=v4c-safe">
 </head>
 <body>
 <div id="bg" aria-hidden="true"><div class="photo" id="bgPhoto" hidden></div><canvas id="bgCanvas"></canvas></div>
@@ -41,11 +41,11 @@
       <p class="eyebrow">R&amp;Cmusic <span>/</span> Packs para DJs</p>
       <h1>Música, videos y herramientas <em>para la cabina</em></h1>
       <p class="lead" id="lema">Packs de géneros, transiciones, intros, mashups, samples y programas, ordenados por BPM y listos para tu set.</p>
-      <div class="cta">
+      <div class="cta cats" id="heroCats" aria-label="Categorías">
         <a class="btn grad lg" href="#packs">Ver los packs</a>
       </div>
       <ul class="perks">
-        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z M4 7l8 6 8-6"/></svg>Entras con tu Gmail</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>Reproduce antes de comprar</li>
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l5 9-4 7H7l-4-7z"/></svg>Archivos en Google Drive</li>
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9m5 9V5m5 13v-7m5 7V8"/></svg>Ordenado por BPM</li>
       </ul>
@@ -69,10 +69,11 @@
     <div class="block-head">
       <div>
         <h2 id="packsTitle">Packs y carpetas</h2>
-        <p>Abre un pack para ver todo su contenido al instante. Pulsa <b>Comprar</b> y te contactamos por WhatsApp para activarlo.</p>
+        <p>Abre un pack para ver y reproducir su contenido al instante. Pulsa <b>Comprar</b> para descargarlo y te contactamos por WhatsApp para activarlo.</p>
       </div>
       <p class="mine-note" id="mineNote" hidden></p>
     </div>
+    <div class="seg pfilter" id="packFilter" role="group" aria-label="Filtrar packs por categoría" hidden></div>
     <div class="packs" id="packGrid" aria-live="polite"></div>
   </section>
 
@@ -352,8 +353,24 @@
               </div>
             </div>
           </div>
+          <fieldset class="w6 botones-box"><legend>Botones de la portada</legend>
+            <p class="help">Cada botón muestra las carpetas de su tipo (el “Tipo” que eliges en Carpetas y precios). “Mixto” aparece en Audio y en Videos.</p>
+            <div class="botones-grid">
+              <label class="tick"><input type="checkbox" data-boton="todos"><span>Todos</span></label>
+              <label class="tick"><input type="checkbox" data-boton="audio"><span>Audio</span></label>
+              <label class="tick"><input type="checkbox" data-boton="video"><span>Videos</span></label>
+              <label class="tick"><input type="checkbox" data-boton="software"><span>Software</span></label>
+              <label class="tick"><input type="checkbox" data-boton="herramientas"><span>Herramientas DJ</span></label>
+              <label class="tick"><input type="checkbox" data-boton="actualizaciones"><span>Actualizaciones</span></label>
+            </div>
+          </fieldset>
+          <label class="w6">Reproducción en la web<select id="jRepro">
+              <option value="todos">Activada para todos (visitantes y compradores)</option>
+              <option value="compradores">Solo para quienes compraron</option>
+              <option value="nadie">Desactivada</option>
+            </select><span class="help" id="jReproHelp"></span></label>
           <label class="tick w6"><input type="checkbox" id="jLuces"><span>Mostrar las luces animadas sobre el fondo</span></label>
-          <label class="tick w6"><input type="checkbox" id="jDownloadAudio"><span>Mostrar iconos de descarga de archivos desde la web (audio, software y herramientas)</span></label>
+          <label class="tick w6"><input type="checkbox" id="jDownloadAudio"><span>Mostrar iconos de descarga a quienes compraron (y en carpetas públicas)</span></label>
           <label class="tick w6"><input type="checkbox" id="jUser"><span>Enviar correos al usuario (solicitud recibida y acceso activado)</span></label>
           <p class="note w6" id="jQuota"></p>
           <div class="w6 row-end"><p class="err" id="jErr"></p><button type="button" class="btn" id="jCheck">Revisar vencimientos</button><button type="button" class="btn" id="jTest">Correo de prueba</button><button type="submit" class="btn grad" id="jSave">Guardar ajustes</button></div>
@@ -368,12 +385,12 @@
   <div class="sheet video-sheet">
     <header class="shead"><h3 id="vTitle">Video</h3><button type="button" class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
     <div class="video" id="vFrame"></div>
-    <div class="row-split pad"><span class="num" id="vMeta"></span><div class="row-end"><a class="btn" id="vOpen" href="#" target="_blank" rel="noopener">Abrir en Drive</a><a class="btn light" id="vDl" href="#" target="_blank" rel="noopener">Descargar</a></div></div>
+    <div class="row-split pad"><span class="num" id="vMeta"></span><div class="row-end"><span class="note" id="vNote" hidden>La descarga es para quienes compran el pack.</span><a class="btn" id="vOpen" href="#" target="_blank" rel="noopener">Abrir en Drive</a><a class="btn light" id="vDl" href="#" target="_blank" rel="noopener">Descargar</a></div></div>
   </div>
 </div>
 
 <input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" hidden>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
-<script src="app.js?v=deleteorders1" defer></script>
+<script src="app.js?v=v4c-safe" defer></script>
 </body>
 </html>
