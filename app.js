@@ -938,10 +938,19 @@ function logoutUser(silent){
 /* =====================================================================
    Reproducción
    ===================================================================== */
-let current = null, queue = [];
+let current = null, queue = [], sampleAudio = null;
+const SAMPLE_SECONDS = 30;
+function clearSampleAudio(){
+  if(!sampleAudio) return;
+  sampleAudio.pause();
+  sampleAudio.removeAttribute("src");
+  sampleAudio.load();
+  sampleAudio = null;
+}
 function play(f){
   if(sinPlayer()) return;
   if(current && current.id === f.id && f.k === "a"){ stop(); return; }
+  clearSampleAudio();
   const demo = isDemoId(f.id);
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => x.id && (x.k==="v" || x.k==="a"));
@@ -959,10 +968,37 @@ function play(f){
     [["#vOpen",D.view,canView(f)],["#vDl",D.dl,canDl(f)]].forEach(([s,fn,ok]) => { const a = $(s); a.hidden = !ok; if(demo){ a.href="#"; a.dataset.demo="1"; } else { a.href=fn(f.id); delete a.dataset.demo; } });
     $("#vNote").hidden = canDl(f) || AJ.descargasCanciones === false;
     openModal("#vModal");
-  } else $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
+  } else if(demo) {
+    $("#dockFrame").textContent = "Ejemplo · sin archivo conectado";
+  } else {
+    // El iframe de Drive no permite controlar el tiempo desde esta web.
+    // El audio usa el mismo archivo accesible y limita la vista a 30 segundos.
+    const container = $("#dockFrame");
+    container.innerHTML = `<audio controls autoplay preload="metadata" controlsList="nodownload noplaybackrate" style="width:100%;height:42px" aria-label="Muestra de 30 segundos de ${esc(f.nombre)}"></audio>`;
+    const audio = container.querySelector("audio");
+    sampleAudio = audio;
+    audio.src = D.dl(f.id);
+    let ended = false;
+    function limitSample(){
+      if(audio.currentTime >= SAMPLE_SECONDS){
+        audio.pause();
+        if(audio.currentTime > SAMPLE_SECONDS) audio.currentTime = SAMPLE_SECONDS;
+        if(!ended){ ended = true; toast("Fin de la muestra de 30 segundos."); }
+      } else { ended = false; }
+    }
+    audio.addEventListener("timeupdate", limitSample);
+    audio.addEventListener("seeking", limitSample);
+    audio.addEventListener("seeked", limitSample);
+    audio.addEventListener("play", limitSample);
+    audio.addEventListener("error", () => {
+      if(sampleAudio === audio) toast("No se pudo cargar la muestra desde Drive. Verifica el acceso al archivo.", "err");
+    });
+    audio.play().catch(() => {});
+  }
   refreshRows();
 }
 function stop(){
+  clearSampleAudio();
   current = null;
   document.body.classList.remove("playing"); $("#dock").classList.remove("on"); $("#disc").classList.remove("spin");
   setTimeout(() => { if(!current) $("#dockFrame").innerHTML = ""; }, 400);
