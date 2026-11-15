@@ -15,12 +15,14 @@ const CONFIG = {
 
   // Solo para el modo demostración (con backend se leen de Google Sheets)
   carpetasDemo: [
-    { nombre: "Pack géneros musicales", tipo: "Audio",    precio: 35,  modalidad: "Mensual",       meses: 1,  descripcion: "Reggaetón, salsa, cumbia, bachata y electrónica, ordenados por género y BPM." },
-    { nombre: "Transiciones",           tipo: "Video",    precio: 25,  modalidad: "Mensual",       meses: 1,  descripcion: "Videos de transición entre géneros con el BPM marcado, listos para pantalla." },
-    { nombre: "Intros y Open Shows",    tipo: "Video",    precio: 30,  modalidad: "Único",         meses: 0,  descripcion: "Intros, cuentas regresivas y aperturas de show para empezar fuerte." },
-    { nombre: "Mashups",                tipo: "Audio",    precio: 50,  modalidad: "Personalizado", meses: 3,  descripcion: "Mashups y edits exclusivos para encender la pista." },
-    { nombre: "Samples / FX",           tipo: "Audio",    precio: 0,   modalidad: "Único",         meses: 0,  descripcion: "Risers, impactos, sirenas y efectos para tus mezclas." },
-    { nombre: "Programas",              tipo: "Software", precio: 120, modalidad: "Anual",         meses: 12, descripcion: "Programas, skins y mapeos para tu software de DJ, con guía de instalación." }
+    { nombre: "Pack géneros musicales", tipo: "Audio",    precio: 35,  modalidad: "Mensual",       meses: 1,  visitantes: "reproducir", descripcion: "Reggaetón, salsa, cumbia, bachata y electrónica, ordenados por género y BPM." },
+    { nombre: "Transiciones",           tipo: "Video",    precio: 25,  modalidad: "Mensual",       meses: 1,  visitantes: "reproducir", descripcion: "Videos de transición entre géneros con el BPM marcado, listos para pantalla." },
+    { nombre: "Intros y Open Shows",    tipo: "Video",    precio: 30,  modalidad: "Único",         meses: 0,  visitantes: "reproducir", descripcion: "Intros, cuentas regresivas y aperturas de show para empezar fuerte." },
+    { nombre: "Mashups",                tipo: "Audio",    precio: 50,  modalidad: "Personalizado", meses: 3,  visitantes: "privada",    descripcion: "Mashups y edits exclusivos para encender la pista." },
+    { nombre: "Samples / FX",           tipo: "Audio",    precio: 0,   modalidad: "Único",         meses: 0,  visitantes: "publica",    descripcion: "Risers, impactos, sirenas y efectos para tus mezclas." },
+    { nombre: "Programas",              tipo: "Software", precio: 120, modalidad: "Anual",         meses: 12, visitantes: "privada",    descripcion: "Programas, skins y mapeos para tu software de DJ, con guía de instalación." },
+    { nombre: "Herramientas DJ",        tipo: "Herramientas", precio: 40, modalidad: "Único",      meses: 0,  visitantes: "privada",    descripcion: "Plantillas, cue points, acapellas y utilidades para preparar tus sets." },
+    { nombre: "Actualizaciones de noviembre", tipo: "Actualizaciones", precio: 20, modalidad: "Mensual", meses: 1, visitantes: "reproducir", descripcion: "Lo nuevo del mes: estrenos, edits y videos agregados a la biblioteca." }
   ]
 };
 /* ===================== fin de la configuración ===================== */
@@ -67,7 +69,12 @@ function coverUrl(v){
 }
 
 /* ---------- Formatos ---------- */
-let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true };
+const BOTONES_DEF = { todos:true, audio:true, video:true, software:true, herramientas:true, actualizaciones:true };
+let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true, botones:{ ...BOTONES_DEF }, reproduccion:"nadie" };
+// Reproducción en la web (Ajustes): todos · compradores · nadie
+const reproDe = r => ["todos","compradores","nadie"].includes(r) ? r : "nadie";
+const sinPlayer = () => AJ.reproduccion === "nadie";
+const botonesDe = b => Object.fromEntries(Object.keys(BOTONES_DEF).map(k => [k, !(b && b[k] === false)]));
 const wa = () => AJ.whatsapp || CONFIG.whatsapp;
 const money = p => Number(p) > 0 ? `${AJ.moneda || CONFIG.moneda} ${Number(p).toFixed(2)}` : "Gratis";
 const MODS = { "Único":0, "Mensual":1, "Anual":12, "Personalizado":null };
@@ -118,6 +125,12 @@ const I = {
   img:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>',
   lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   chev:'<svg class="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
+  audio:'<svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
+  video:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>',
+  software:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M8 9l-2 2 2 2M16 9l2 2-2 2"/></svg>',
+  tools:'<svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>',
+  updates:'<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/></svg>',
+  grid:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',
   wa:'<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.7-1.1-4.4-3.9-4.6-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.6-.1 1.2z"/></svg>'
 };
 // Arte de portada según el tipo de pack (si el administrador no subió una portada propia)
@@ -128,8 +141,9 @@ function artFor(c){
   if(/transici/.test(t)) return ART.transiciones;
   if(/intro|open ?show|apertura/.test(t)) return ART.intros;
   if(/mashup|remix|edit/.test(t)) return ART.mashups;
-  if(/sample|fx|efecto|sonido/.test(t)) return ART.samples;
+  if(/sample|fx|efecto|sonido|herramienta/.test(t)) return ART.samples;
   if(/programa|software|plugin|skin|mapeo/.test(t)) return ART.programas;
+  if(/actualiz|novedad|nuevo|estreno/.test(t)) return ART.mashups;
   if(/genero|musica|audio|pack/.test(t)) return ART.generos;
   const k = Object.keys(ART); return ART[k[hash(c.nombre||"x") % k.length]];
 }
@@ -190,21 +204,36 @@ const DEMO_FILES = {
   "Mashups": { files: ["Mashup Salsa Clásica 180bpm.mp3","Mashup Reggaetón Old School 95bpm.mp3","Mashup Cumbia vs House 124bpm.mp3","Mashup Bachata Remix 128bpm.mp3","Mashup Huayno Fusión 112bpm.mp3"] },
   "Samples / FX": { subs: { "Risers": ["Riser 8 compases 128bpm.wav","Riser Blanco 16 compases.wav"], "Impactos": ["Sub Drop Impacto.wav","Boom Cinemático.wav"] },
     files: ["Air Horn Clásico.wav","Sirena Cabina.wav","Voz Arriba las manos.wav","Scratch Corto.wav"] },
-  "Programas": { files: ["Guía de instalación.pdf","Skins Virtual DJ Pack.zip","Mapeo controladora DDJ.zip","Plugins efectos VST.zip"] }
+  "Programas": { files: ["Guía de instalación.pdf","Skins Virtual DJ Pack.zip","Mapeo controladora DDJ.zip","Plugins efectos VST.zip"] },
+  "Herramientas DJ": { subs: { "Acapellas": ["Acapella Reggaetón 95bpm.mp3","Acapella Salsa 180bpm.mp3"], "Plantillas": ["Plantilla de set 2 horas.pdf","Cue points Rekordbox.xml"] } },
+  "Actualizaciones de noviembre": { subs: { "Audio": ["Estreno Reggaetón 94bpm.mp3","Edit Cumbia 2026 98bpm.mp3"], "Videos": ["Intro Noviembre 128bpm.mp4"] } }
 };
 const kOf = n => { const e = ext(n); return ["mp4","mov","webm","mkv"].includes(e) ? "v" : ["mp3","wav","m4a","flac","aac"].includes(e) ? "a" : ["jpg","png","webp"].includes(e) ? "i" : "o"; };
-function demoTree(nombre, v, ids){
-  const node = Array.isArray(v) ? { files:v } : v;
-  return { n:nombre, f:(node.files||[]).map(x => ids ? [x, kOf(x), "EJEMPLO_" + hash(x).toString(36)] : [x, kOf(x)]),
-           s:Object.entries(node.subs||{}).map(([k,x]) => demoTree(k, x, ids)) };
+function demoTree(nombre, v, ids, ruta){
+  ruta = ruta || nombre;
+  const node = Array.isArray(v) ? { files:v } : v, t = { n:nombre, h:"demo:" + ruta };
+  if(ids) t.d = "EJEMPLO_F" + hash(ruta).toString(36);
+  t.f = (node.files||[]).map(x => ids ? [x, kOf(x), "EJEMPLO_" + hash(x).toString(36)] : [x, kOf(x)]);
+  t.s = Object.entries(node.subs||{}).map(([k,x]) => demoTree(k, x, ids, ruta + "/" + k));
+  return t;
 }
+// Lo que ve un visitante en modo demostración (imita vistaPublica_ del servidor)
+function demoVista(n, modo){
+  const pub = modo === "reproducir" || modo === "publica", dl = modo === "publica", o = { n:n.n, h:n.h };
+  if(pub) o.p = 1; if(dl && n.d) o.d = n.d; if(n.z) o.z = 1;
+  o.f = n.f.map(x => pub && x[2] ? [x[0], x[1], x[2], dl ? 3 : 1] : [x[0], x[1]]);
+  o.s = n.s.map(x => demoVista(x, modo));
+  return o;
+}
+const demoModo = c => reproDe(demoAj().reproduccion) === "todos" ? (c.visitantes || "auto") : "privada";
+const demoLibre = c => demoModo(c) === "publica" ? 2 : demoModo(c) === "reproducir" ? 1 : 0;
 const countTree = t => t.f.length + t.s.reduce((n,x)=>n+countTree(x),0);
-const DK = { car:"rc5_demo_car", regs:"rc5_demo_regs", sols:"rc5_demo_sols", aj:"rc5_demo_aj" };
+const DK = { car:"rc6_demo_car", regs:"rc5_demo_regs", sols:"rc5_demo_sols", aj:"rc5_demo_aj" };
 const isoIn = n => new Date(Date.now()+n*864e5).toISOString();
 const addMonths = (iso, n) => { const x = new Date(iso); x.setMonth(x.getMonth()+n); return x.toISOString(); };
 const uid = () => Math.random().toString(36).slice(2,10);
 const demoCars = () => store.get(DK.car) || CONFIG.carpetasDemo.map((c,i)=>({ id:"c"+(i+1), orden:i+1, portada:"", drive:"", visible:true, ...c }));
-const demoAj = () => store.get(DK.aj) || { correoAvisos:"", whatsapp:"", moneda:CONFIG.moneda, avisarUsuario:true, sitio:"", fondo:"", luces:true };
+const demoAj = () => ({ correoAvisos:"", whatsapp:"", moneda:CONFIG.moneda, avisarUsuario:true, sitio:"", fondo:"", luces:true, ...(store.get(DK.aj) || {}), botones:botonesDe((store.get(DK.aj) || {}).botones) });
 function demoRegs(){
   return store.get(DK.regs) || [
     { id:"ej01", fecha:isoIn(-0.02), nombre:"DJ Ejemplo Uno", correo:"ejemplo.uno@gmail.com", whatsapp:"51911111111", estado:"Registrado", nota:"", accesos:[] },
@@ -241,16 +270,26 @@ async function demoApi(accion, d){
   };
   switch(accion){
     case "catalogo": { const aj = demoAj();
-      return { ok:true, v:3, ajustes:{ whatsapp:aj.whatsapp, moneda:aj.moneda, fondo:aj.fondo, luces:aj.luces!==false },
-        carpetas: vis.map(c => ({ ...c, cantidad: DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0 })) }; }
-    case "indice": { const packs = {}; vis.forEach(c => { if(DEMO_FILES[c.nombre]) packs[c.id] = demoTree(c.nombre, DEMO_FILES[c.nombre], false); }); return { ok:true, packs }; }
+      return { ok:true, v:4, ajustes:{ whatsapp:aj.whatsapp, moneda:aj.moneda, fondo:aj.fondo, luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:aj.botones, reproduccion:reproDe(aj.reproduccion) },
+        carpetas: vis.map(c => ({ ...c, visitantes:c.visitantes||"auto", libre:demoLibre(c), cantidad: DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0 })) }; }
+    case "indice": { const packs = {}; vis.forEach(c => { if(DEMO_FILES[c.nombre] && !(window.__demoPend > 0)) packs[c.id] = demoVista(demoTree(c.nombre, DEMO_FILES[c.nombre], true), demoModo(c)); }); return { ok:true, packs }; }
     case "contenido": {
       const c = cars.find(x=>x.id===d.id); if(!c) throw new Error("Este pack ya no está disponible.");
       const u = user(), acc = u && u.accesos.find(a=>a.carpetaId===c.id && activo(a)), acceso = d.admin==="demo-token" || !!acc;
       if(!DEMO_FILES[c.nombre]) return { ok:true, sinEnlace:true, acceso, arbol:{ n:c.nombre, f:[], s:[] } };
       if(window.__demoPend > 0){ window.__demoPend--; return { ok:true, pendiente:true, acceso, arbol:{ n:c.nombre, f:[], s:[] } }; }
-      return acceso ? { ok:true, acceso:true, hasta:acc ? acc.hasta : "", drive:"", arbol:demoTree(c.nombre, DEMO_FILES[c.nombre], true) }
-                    : { ok:true, acceso:false, arbol:demoTree(c.nombre, DEMO_FILES[c.nombre], false) };
+      const t = demoTree(c.nombre, DEMO_FILES[c.nombre], true);
+      return acceso ? { ok:true, acceso:true, hasta:acc ? acc.hasta : "", drive:"", arbol:t } : { ok:true, acceso:false, arbol:demoVista(t, demoModo(c)) };
+    }
+    case "carpeta": {
+      const c = cars.find(x=>x.id===d.pack); if(!c) throw new Error("Este pack ya no está disponible.");
+      if(!DEMO_FILES[c.nombre]) return { ok:true, sinEnlace:true, acceso:false, nodo:{ n:c.nombre, f:[], s:[] } };
+      const u = user(), acceso = d.admin==="demo-token" || !!(u && u.accesos.find(a=>a.carpetaId===c.id && activo(a)));
+      const t = demoTree(c.nombre, DEMO_FILES[c.nombre], true);
+      const find = n => (!d.folder || n.h === d.folder || n.d === d.folder) ? n : n.s.map(find).find(Boolean);
+      const n = find(t); if(!n) throw new Error("Esa carpeta ya no está en este pack.");
+      const lvl = { ...n, s:n.s.map(x => ({ n:x.n, d:x.d, h:x.h, f:[], s:[], z:1 })) };
+      return { ok:true, acceso, nodo: acceso ? lvl : demoVista(lvl, demoModo(c)) };
     }
     case "registrar": {
       const c = String(d.datos.correo).toLowerCase(), ex = regs.find(x=>x.correo===c);
@@ -287,7 +326,7 @@ async function demoApi(accion, d){
     case "salir": return { ok:true };
     case "listar": { tok(); const cnt = {}; cars.forEach(c => cnt[c.id] = DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0);
       return { ok:true, registros:regs.map(r=>({ ...r, accesos:r.accesos.filter(a=>a.estado!=="Revocado") })), solicitudes:sols,
-               carpetas:cars.slice().sort((a,b)=>a.orden-b.orden), ajustes:demoAj(), conteos:cnt, indexado:new Date().toISOString(), hoja:"", cuota:null }; }
+               carpetas:cars.slice().sort((a,b)=>a.orden-b.orden).map(c => ({ ...c, visitantes:c.visitantes||"auto", publica:demoLibre(c) > 0 })), ajustes:demoAj(), conteos:cnt, indexado:new Date().toISOString(), hoja:"", cuota:null }; }
     case "resolverSolicitud": { tok(); const s = sols.find(x=>x.id===d.id); if(!s) throw new Error("Solicitud no encontrada.");
       if(s.estado!=="Pendiente") throw new Error("Esta solicitud ya fue resuelta.");
       if(d.decision==="rechazar"){ s.estado = "Rechazada"; s.resuelto = new Date().toISOString(); saveS(); return { ok:true }; }
@@ -320,7 +359,7 @@ async function demoApi(accion, d){
       let meses = MODS[mod];
       if(meses == null){ meses = Math.round(Number(c.meses)||0); if(meses<1||meses>120) throw new Error("Para la modalidad personalizada escribe de 1 a 120 meses."); }
       const row = { nombre:c.nombre.trim(), descripcion:c.descripcion||"", precio:Math.max(0, Number(c.precio)||0), portada:c.portada||"", drive:driveId(c.drive),
-        tipo:c.tipo||"Video", orden:Number(c.orden)||cars.length+1, visible:c.visible!==false, modalidad:mod, meses };
+        tipo:c.tipo||"Video", orden:Number(c.orden)||cars.length+1, visible:c.visible!==false, modalidad:mod, meses, visitantes:c.visitantes||"auto" };
       if(c.id) Object.assign(cars.find(x=>x.id===c.id), row); else cars.push({ id:"c"+Date.now().toString(36), ...row });
       saveC(); return { ok:true }; }
     case "eliminarCarpeta": tok(); store.set(DK.car, cars.filter(x=>x.id!==d.id)); return { ok:true };
@@ -328,7 +367,7 @@ async function demoApi(accion, d){
     case "guardarAjustes": { tok(); const a = d.ajustes;
       if(a.correoAvisos && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.correoAvisos)) throw new Error("El correo para avisos no es válido.");
       if(a.sitio && !/^https:\/\//.test(a.sitio)) throw new Error("La dirección de la web debe empezar con https://");
-      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false, descargasCanciones:a.descargasCanciones!==false };
+      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false, descargasCanciones:a.descargasCanciones!==false, botones:botonesDe(a.botones), reproduccion:reproDe(a.reproduccion) };
       store.set(DK.aj, aj); return { ok:true, ajustes:aj }; }
     case "probarCorreo": tok(); throw new Error("En modo demostración no se envían correos. Conecta el servidor para probarlo.");
   }
@@ -345,8 +384,10 @@ const CK = { cat:"rc5_cat", idx:"rc5_idx", mail:"rc5_mail", user:"rc5_user", own
 function applyCatalog(r){
   CARP = r.carpetas || [];
   const aj = r.ajustes || {};
-  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false };
-  applyFondo(); renderPacks(); renderHome();
+  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:botonesDe(aj.botones), reproduccion:reproDe(aj.reproduccion) };
+  if(sinPlayer() && typeof current !== "undefined" && current) stop();
+  if(CAT && !catOn(CAT)) CAT = "";
+  applyFondo(); renderCats(); renderPacks(); renderHome();
 }
 async function loadCatalog(force){
   const cached = store.get(CK.cat);
@@ -360,10 +401,11 @@ async function loadCatalog(force){
     if(!cached) $("#packGrid").innerHTML = `<div class="empty" style="grid-column:1/-1">No se pudo cargar el catálogo. ${esc(ex.message)}<br><br><button type="button" class="btn" data-retry>Reintentar</button></div>`;
   }
 }
-// Índice público de todos los packs: un solo pedido, guardado en el navegador → abrir un pack es instantáneo
+// Índice público de todos los packs: un solo pedido, guardado en el navegador → abrir un pack es instantáneo.
+// Se muestra lo guardado y siempre se pide la versión nueva en segundo plano (el servidor la mantiene al día cada minuto).
 function loadIndex(force){
   const cached = store.get(CK.idx);
-  if(cached && !force){ IDX = cached.v || {}; if(Date.now() - cached.t < 5*60e3) return (IDXP = Promise.resolve(IDX)); }
+  if(cached && !force){ IDX = cached.v || {}; if(Date.now() - cached.t < 60e3) return (IDXP = Promise.resolve(IDX)); }
   IDXP = api("indice").then(r => {
     IDX = r.packs || {}; store.set(CK.idx, { t:Date.now(), v:IDX });
     if(F.c && !F.own && $("#fModal").classList.contains("open")) renderTree(); // refresca la vista abierta
@@ -384,15 +426,55 @@ function packState(id){
   if(miSolicitud(id)) return "req";
   return "";
 }
+/* ---------- Botones de categoría: Audio · Videos · Software · Actualizaciones ---------- */
+const CATS = [
+  { k:"audio",           label:"Audio",           tipos:["Audio","Mixto"], icon:"audio",    hash:"audio" },
+  { k:"video",           label:"Videos",          tipos:["Video","Mixto"], icon:"video",    hash:"videos" },
+  { k:"software",        label:"Software",        tipos:["Software"],      icon:"software", hash:"software" },
+  { k:"herramientas",    label:"Herramientas DJ", tipos:["Herramientas"],  icon:"tools",    hash:"herramientas" },
+  { k:"actualizaciones", label:"Actualizaciones", tipos:["Actualizaciones"], icon:"updates", hash:"actualizaciones" }
+];
+let CAT = "";
+const catOn = k => AJ.botones[k] !== false;
+const tipoNorm = t => String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+const enCat = (c, k) => { const cat = CATS.find(x => x.k === k); return !cat || cat.tipos.some(t => tipoNorm(t) === tipoNorm(c.tipo)); };
+const packsDe = k => CARP.filter(c => enCat(c, k));
+function renderCats(){
+  const on = CATS.filter(x => catOn(x.k));
+  const hero = $("#heroCats"), heroBtns = (catOn("todos") ? [{ k:"", label:"Todos", icon:"grid" }] : []).concat(on);
+  hero.innerHTML = heroBtns.length ? heroBtns.map(x => { const n = x.k ? packsDe(x.k).length : CARP.length;
+      return `<button type="button" class="catbtn" data-cat="${x.k}" aria-label="${esc(x.label)}: ${n} pack${n===1?"":"s"}"><span class="cic">${I[x.icon]}</span><span class="ctx2"><b>${esc(x.label)}</b><small>${n ? `${n} pack${n===1?"":"s"}` : "Próximamente"}</small></span></button>`; }).join("")
+    : `<a class="btn grad lg" href="#packs">Ver los packs</a>`;
+  hero.classList.toggle("solo", !heroBtns.length);
+  const bar = $("#packFilter");
+  bar.hidden = !on.length;
+  bar.innerHTML = on.length ? [{ k:"", label:"Todos", icon:"grid" }].concat(on).map(x =>
+    `<button type="button" data-cat="${x.k}" data-cat-filter aria-pressed="${CAT === x.k}">${I[x.icon]}<span>${esc(x.label)}</span></button>`).join("") : "";
+}
+function setCat(k, go){
+  CAT = k && catOn(k) ? k : "";
+  renderCats(); renderPacks();
+  const cat = CATS.find(x => x.k === CAT);
+  $("#packsTitle").textContent = cat ? cat.label : "Packs y carpetas";
+  if(go){
+    try{ history.replaceState(history.state, "", cat ? "#" + cat.hash : "#packs"); }catch(_){}
+    $("#packs").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+}
+// 0 = los visitantes solo ven la lista · 1 = la reproducen · 2 = la reproducen y descargan
+const libreDe = c => Number(c && c.libre) || 0;
 function renderPacks(){
   const grid = $("#packGrid");
   if(!CARP.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1">Aún no hay packs publicados.</div>`; return; }
-  grid.innerHTML = CARP.map(c => {
-    const free = !(Number(c.precio) > 0), st = packState(c.id), mine = miAcceso(c.id);
+  const lista = CAT ? packsDe(CAT) : CARP, cat = CATS.find(x => x.k === CAT);
+  if(!lista.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1">Aún no hay packs de ${esc(cat ? cat.label.toLowerCase() : "esta categoría")}. <br><br><button type="button" class="btn" data-cat="">Ver todos los packs</button></div>`; return; }
+  grid.innerHTML = lista.map(c => {
+    const free = !(Number(c.precio) > 0), st = packState(c.id), mine = miAcceso(c.id), lib = libreDe(c);
     const badge = st==="own" ? `<span class="badge-st own">Tu pack${mine.hasta?` · hasta ${esc(fechaCorta(mine.hasta))}`:""}</span>`
-                : st==="req" ? `<span class="badge-st req">Solicitud enviada</span>` : "";
-    const foot = st==="own" ? `<button type="button" class="btn grad sm" data-pack="${esc(c.id)}">Abrir y reproducir</button>`
-               : `<button type="button" class="btn light sm" data-pack="${esc(c.id)}">Ver contenido</button>` +
+                : st==="req" ? `<span class="badge-st req">Solicitud enviada</span>`
+                : lib===2 ? `<span class="badge-st free">Escucha y descarga libre</span>` : lib===1 ? `<span class="badge-st free">Escucha libre</span>` : "";
+    const foot = st==="own" ? `<button type="button" class="btn grad sm" data-pack="${esc(c.id)}">${sinPlayer() ? "Abrir" : "Abrir y reproducir"}</button>`
+               : `<button type="button" class="btn light sm" data-pack="${esc(c.id)}">${lib ? (/video/i.test(c.tipo) ? "Ver y reproducir" : "Escuchar") : "Ver contenido"}</button>` +
                  (st==="req" ? `<button type="button" class="btn sm done" disabled>Solicitado</button>`
                              : `<button type="button" class="btn sm" data-buy="${esc(c.id)}">${free?"Pedir acceso":"Comprar"}</button>`);
     return `<article class="pack" data-prefetch="${esc(c.id)}">
@@ -415,11 +497,11 @@ function renderPacks(){
 /* =====================================================================
    Vista de un pack
    ===================================================================== */
-const F = { c:null, tree:null, own:false, q:"", groups:[], view:[], req:0, open:new Set() };
+const F = { c:null, tree:null, own:false, q:"", groups:[], view:[], req:0, open:new Set(), live:{} };
 const canOpenAll = id => !!(miAcceso(id) || A.token);
 async function openPack(id, push){
   const c = CARP.find(x=>String(x.id)===String(id)); if(!c) return;
-  F.c = c; F.q = ""; $("#fq").value = ""; F.open = new Set(); F.tree = null; F.own = false; F.drive = ""; F.sinEnlace = false;
+  F.c = c; F.q = ""; $("#fq").value = ""; F.open = new Set(); F.tree = null; F.own = false; F.drive = ""; F.sinEnlace = false; F.live = {};
   $("#fCover").innerHTML = coverHtml(c);
   $("#fMeta").innerHTML = `<span>${esc(c.tipo||"Pack")}</span>${c.cantidad?`<span>/</span>${fmtNum(c.cantidad)} archivos`:""}`;
   $("#fName").textContent = c.nombre;
@@ -439,72 +521,128 @@ async function openPack(id, push){
   // 1) Lo que ya está en el navegador se muestra al instante
   if(canOpenAll(c.id) && OWN[c.id]){ F.tree = OWN[c.id].arbol; F.own = true; F.drive = OWN[c.id].drive; }
   else if(IDX[c.id]) F.tree = IDX[c.id];
-  if(F.tree) renderTree(); else $("#fList").innerHTML = Array.from({length:8},()=>`<div class="sk row-sk"></div>`).join("");
+  if(F.tree){ renderTree(); paintPackState(); } else $("#fList").innerHTML = Array.from({length:8},()=>`<div class="sk row-sk"></div>`).join("");
   // 2) Si el usuario tiene acceso, se piden los enlaces (en segundo plano si ya se ve la lista)
   try{
-    if(canOpenAll(c.id) && !(OWN[c.id] && Date.now() - OWN[c.id].t < 10*60e3)) await loadContent(c, seq, 0);
+    if(canOpenAll(c.id) && !(OWN[c.id] && Date.now() - OWN[c.id].t < 2*60e3)) await loadContent(c, seq, 0);
     else if(!F.tree){
       await (IDXP || loadIndex());
       if(seq !== F.req) return;
-      if(IDX[c.id]){ F.tree = IDX[c.id]; renderTree(); }
+      if(IDX[c.id]){ F.tree = IDX[c.id]; renderTree(); paintPackState(); }
       else await loadContent(c, seq, 0);
     }
   }catch(ex){ if(seq === F.req && !F.tree) $("#fList").innerHTML = `<div class="empty">${esc(ex.message)}<br><br><button type="button" class="btn" data-reopen>Reintentar</button></div>`; }
+  // 3) Lo que se está viendo se confirma con Google Drive en este momento: archivos nuevos, renombrados o quitados
+  if(seq === F.req && F.tree && !F.sinEnlace) refreshLevel([]);
 }
-// Pide el contenido al servidor. Si el pack es nuevo o enorme y su lista aún se está preparando en segundo plano,
-// muestra un aviso y vuelve a preguntar solo (nunca se queda esperando hasta agotar el tiempo).
+// Pide el contenido al servidor. Si el pack es nuevo o enorme y su índice aún se prepara, se muestra igual,
+// leyendo sus carpetas directo de Google Drive (nivel por nivel), mientras el índice se termina en segundo plano.
 async function loadContent(c, seq, n){
   const own = canOpenAll(c.id);
   const r = own ? await fetchOwn(c.id) : await api("contenido", { id:c.id });
   if(seq !== F.req) return;
   if(r.pendiente){
     if(own) paintPackState(r);
-    if(!F.tree) $("#fList").innerHTML = `<div class="empty prep"><span class="loader" aria-hidden="true"></span><b>Preparando la lista de este pack…</b><span>Tiene muchos archivos o es nuevo, así que Google Drive la está ordenando por primera vez. Aparecerá aquí sola en unos instantes; no hace falta recargar.</span></div>`;
+    if(!F.tree){ F.tree = { n:c.nombre, f:[], s:[], z:1 }; F.own = own && !!r.acceso; renderTree(); refreshLevel([], true); }
     clearTimeout(F.poll);
     if(n < 45) F.poll = setTimeout(() => { if(seq === F.req) loadContent(c, seq, n + 1).catch(() => {}); }, n < 4 ? 5000 : 9000);
     return;
   }
   if(own){ if(r.acceso){ F.tree = r.arbol; F.own = true; F.drive = r.drive; } else if(!F.tree) F.tree = r.arbol; paintPackState(r); }
-  else { F.tree = r.arbol; F.sinEnlace = !!r.sinEnlace; if(!r.sinEnlace){ IDX[c.id] = r.arbol; store.set(CK.idx, { t:0, v:IDX }); } }
-  renderTree();
+  else { F.tree = r.arbol; F.sinEnlace = !!r.sinEnlace; if(!r.sinEnlace){ IDX[c.id] = r.arbol; store.set(CK.idx, { t:0, v:IDX }); } paintPackState(r); }
+  renderTreeKeep();
 }
 async function fetchOwn(id){
   const r = await api("contenido", { id, token:U.token||"", admin:A.token||"" });
   if(r.acceso && !r.pendiente){ OWN[id] = { t:Date.now(), arbol:r.arbol, drive:r.drive||"", hasta:r.hasta||"" }; store.set(CK.own+id, OWN[id], true); }
   return r;
 }
+
+/* ---------- Carpetas en vivo (un nivel a la vez, directo de Google Drive) ---------- */
+function nodeAt(ruta){ let n = F.tree; for(const name of ruta){ if(!n) return null; n = (n.s||[]).find(x => x.n === name); } return n || null; }
+async function refreshLevel(ruta, force){
+  const c = F.c; if(!c || !F.tree) return;
+  const key = keyOf(ruta), node = nodeAt(ruta); if(!node) return;
+  if(!force && F.live[key] && Date.now() - F.live[key] < 30e3) return;
+  const handle = ruta.length ? (node.h || node.d || "") : "";
+  if(ruta.length && !handle) return;            // índice antiguo sin código de carpeta: se queda con el índice
+  F.live[key] = Date.now();
+  const seq = F.req;
+  let r;
+  try{ r = await api("carpeta", { pack:c.id, folder:handle, token:U.token||"", admin:A.token||"" }); }
+  catch(ex){ delete F.live[key]; if(seq === F.req && node.z){ node.err = ex.message; renderTreeKeep(); } return; }
+  if(seq !== F.req || F.c !== c || r.sinEnlace) return;
+  const tgt = nodeAt(ruta); if(!tgt) return;
+  mergeLevel(tgt, r.nodo, ruta);
+  renderTreeKeep();
+  if(!ruta.length) paintPackState();
+}
+// Mezcla un nivel recién leído con lo que ya se muestra: conserva lo que hay dentro de cada subcarpeta
+function mergeLevel(tgt, fr, ruta){
+  tgt.f = fr.f || [];
+  ["d","p"].forEach(k => { if(fr[k] !== undefined && fr[k] !== "") tgt[k] = fr[k]; else delete tgt[k]; });
+  if(fr.h) tgt.h = fr.h; else delete tgt.h;
+  if(fr.k) tgt.k = fr.k; else delete tgt.k;
+  const old = tgt.s || [];
+  tgt.s = (fr.s || []).map(ns => {
+    const o = old.find(x => (ns.k && x.k === ns.k) || (ns.d && x.d === ns.d) || (ns.h && x.h === ns.h));
+    if(!o) return Object.assign({ n:ns.n, f:[], s:[], z:1 }, ns.d ? { d:ns.d } : {}, ns.h ? { h:ns.h } : {}, ns.k ? { k:ns.k } : {}, ns.p ? { p:ns.p } : {});
+    if(o.n !== ns.n) renameOpen(ruta.concat(o.n), ruta.concat(ns.n));
+    o.n = ns.n; if(ns.d) o.d = ns.d; if(ns.h) o.h = ns.h; else delete o.h; if(ns.k) o.k = ns.k; else delete o.k; if(ns.p) o.p = ns.p; else delete o.p;
+    return o;
+  });
+  delete tgt.z; delete tgt.err;
+}
+function renameOpen(a, b){
+  const ka = keyOf(a), kb = keyOf(b), mv = set => [...set].forEach(k => { if(k === ka || k.startsWith(ka + "\u0001")){ set.delete(k); set.add(kb + k.slice(ka.length)); } });
+  mv(F.open);
+}
+function renderTreeKeep(){
+  const sc = $(".pcontent"), y = sc ? sc.scrollTop : 0, msc = $(".pack-sheet"), my = msc ? msc.scrollTop : 0;
+  renderTree();
+  if(sc) sc.scrollTop = y; if(msc) msc.scrollTop = my;
+}
+// ¿Hay algo que un visitante pueda reproducir en este pack?
+function treePlayable(n){ n = n || F.tree; if(!n) return false; return (n.f||[]).some(x => x[2]) || (n.s||[]).some(treePlayable); }
+const canView = f => !!f.id && (F.own || (f.p & 2) === 2);
+const canDl = f => canView(f) && AJ.descargasCanciones !== false;
 function paintPackState(r){
   const c = F.c, free = !(Number(c.precio) > 0), mine = miAcceso(c.id), req = miSolicitud(c.id), admin = !!A.token && !mine;
   const on = !!(mine || admin || (r && r.acceso));
-  const st = $("#fState");
-  st.className = "fstate" + (on ? " on" : req ? " req" : "");
-  if(admin) st.innerHTML = `<b>Vista de administrador.</b> Ves y reproduces todo el contenido.`;
-  else if(on){ const h = (mine && mine.hasta) || (r && r.hasta); st.innerHTML = `<b>Tienes acceso</b>${h ? ` hasta el ${esc(fechaCorta(h))} (${Math.max(0,dias(h))} días)` : " sin vencimiento"}. Para reproducir, tu navegador debe tener abierta la cuenta de Google ${esc(U.cuenta ? U.cuenta.correo : "aprobada")}.`; }
-  else if(req) st.innerHTML = `<b>Solicitud enviada.</b> El administrador ya recibió tu pedido y te escribirá por WhatsApp para activarlo.`;
-  else if(U.cuenta) st.innerHTML = `Puedes ver la lista completa. Para reproducir y descargar, pulsa <b>${free?"Pedir acceso":"Comprar"}</b>.`;
-  else st.innerHTML = `Vista previa de la lista. Pulsa <b>${free?"Pedir acceso":"Comprar"}</b>: te registras en un minuto y el administrador te contacta por WhatsApp.`;
-  const label = on ? "" : req ? "Solicitud enviada" : free ? "Pedir acceso" : "Comprar";
+  const pubDl = !on && !!(F.tree && F.tree.d && !isDemoId(F.tree.d)) && AJ.descargasCanciones !== false;
+  const libre = !on && !sinPlayer() && (treePlayable() || (!F.tree && libreDe(c) > 0));
+  const verbo = sinPlayer() ? "Descarga" : "Reproduce y descarga";
+  const st = $("#fState"), buyWord = free ? "Pedir acceso" : "Comprar";
+  st.className = "fstate" + (on ? " on" : req ? " req" : libre ? " free" : "");
+  if(admin) st.innerHTML = `<b>Vista de administrador.</b> Ves${sinPlayer() ? "" : ", reproduces"} y descargas todo el contenido.${sinPlayer() ? " La reproducción está desactivada en Ajustes." : ""}`;
+  else if(on){ const h = (mine && mine.hasta) || (r && r.hasta); st.innerHTML = `<b>Tienes acceso</b>${h ? ` hasta el ${esc(fechaCorta(h))} (${Math.max(0,dias(h))} días)` : " sin vencimiento"}. ${verbo} todo. Para descargar desde Drive, tu navegador debe tener abierta la cuenta de Google ${esc(U.cuenta ? U.cuenta.correo : "aprobada")}.`; }
+  else if(req) st.innerHTML = `<b>Solicitud enviada.</b> El administrador ya recibió tu pedido y te escribirá por WhatsApp para activarlo.${libre ? " Mientras tanto, puedes reproducir el contenido." : ""}`;
+  else if(libre && (pubDl || libreDe(c) === 2)) st.innerHTML = `<b>Escucha y descarga libre.</b> Este pack está abierto: reproduce y descarga sin comprar.`;
+  else if(libre) st.innerHTML = `<b>Escucha libre.</b> Reproduce todo el contenido sin comprar. Para <b>descargar</b>, pulsa <b>${buyWord}</b>.`;
+  else if(U.cuenta) st.innerHTML = `Puedes ver la lista completa. Para ${sinPlayer() ? "descargar" : "reproducir y descargar"}, pulsa <b>${buyWord}</b>.`;
+  else st.innerHTML = `Vista previa de la lista. Pulsa <b>${buyWord}</b>: te registras en un minuto y el administrador te contacta por WhatsApp.`;
+  const label = on ? "" : req ? "Solicitud enviada" : buyWord;
   [["#fBuy","grad lg"],["#bbBuy","grad"]].forEach(([s,cls]) => {
     const b = $(s); b.hidden = on; b.textContent = label; b.disabled = !!req;
     b.className = "btn " + (req ? "done" : cls) + (s === "#fBuy" ? " lg" : "");
   });
   $("#buybar").hidden = on;
-  const drive = (F.own && F.tree && F.tree.d) ? D.folder(F.tree.d) : ((r && r.drive) || F.drive);
-  $("#fDrive").hidden = !(on && drive); $("#fDrive").classList.toggle("drive-download-attn", !!(on && drive)); if(drive) $("#fDrive").href = drive;
+  const drive = on ? ((F.own && F.tree && F.tree.d && !isDemoId(F.tree.d)) ? D.folder(F.tree.d) : ((r && r.drive) || F.drive)) : pubDl ? D.folder(F.tree.d) : "";
+  $("#fDrive").hidden = !drive; $("#fDrive").classList.toggle("drive-download-attn", !!drive); if(drive) $("#fDrive").href = drive;
 }
 // Árbol → grupos (archivos sueltos primero, luego cada subcarpeta), ordenado por BPM
 function buildGroups(){
   const q = F.q.trim().toLowerCase(), out = [];
   (function walk(node, ruta){
     const enRuta = q && ruta.join(" / ").toLowerCase().includes(q);
-    const files = (node.f||[]).map(x => ({ nombre:x[0], k:x[1], id:x[2]||"", bpm:parseBpm(x[0]) }))
+    const files = (node.f||[]).map(x => ({ nombre:x[0], k:x[1], id:x[2]||"", p:Number(x[3])||0, bpm:parseBpm(x[0]) }))
       .filter(f => !q || enRuta || f.nombre.toLowerCase().includes(q) || (f.bpm && f.bpm.txt.includes(q))).sort(byBpm);
-    const g = { ruta, key:ruta.join("\u0001"), nivel:ruta.length, files, total:(node.f||[]).length, d:node.d || "" };
+    const g = { ruta, key:ruta.join("\u0001"), nivel:ruta.length, files, total:(node.f||[]).length, d:node.d || "", lazy:!!node.z, err:node.err || "" };
     out.push(g);
-    let deep = g.total, hit = files.length;
-    (node.s||[]).forEach(s => { const r = walk(s, ruta.concat(s.n)); deep += r[0]; hit += r[1]; });
-    g.deep = deep; g.hit = hit;
-    return [deep, hit];
+    let deep = g.total, hit = files.length, lazy = g.lazy;
+    (node.s||[]).forEach(s => { const r = walk(s, ruta.concat(s.n)); deep += r[0]; hit += r[1]; lazy = lazy || r[2]; });
+    g.deep = deep; g.hit = hit; g.lazyDeep = lazy;
+    return [deep, hit, lazy];
   })(F.tree || { f:[], s:[] }, []);
   return out;
 }
@@ -514,39 +652,42 @@ const keyOf = ruta => ruta.join("\u0001");
 const isOpen = g => !g.ruta.length || (F.q ? g.hit > 0 : F.open.has(g.key));
 const isShown = g => { if(F.q && !g.hit) return false; for(let n = 1; n < g.ruta.length; n++) if(!isOpen({ ruta:g.ruta.slice(0,n), key:keyOf(g.ruta.slice(0,n)), hit:1 })) return false; return true; };
 function toggleGroup(key, force){
-  const sc = $(".pcontent"), y = sc ? sc.scrollTop : 0, msc = $(".pack-sheet"), my = msc ? msc.scrollTop : 0;
   const on = force !== undefined ? force : !F.open.has(key);
   if(on) F.open.add(key); else F.open.delete(key);
-  renderTree();
-  if(sc) sc.scrollTop = y; if(msc) msc.scrollTop = my;
+  renderTreeKeep();
+  if(on) refreshLevel(key.split("\u0001"));
 }
 function renderTree(){
   if(!F.tree) return;
   const gs = F.groups = buildGroups();
-  const total = gs.reduce((t,g)=>t+g.total,0), shown = gs.reduce((t,g)=>t+g.files.length,0), nsub = gs.length - 1;
+  const total = gs.reduce((t,g)=>t+g.total,0), shown = gs.reduce((t,g)=>t+g.files.length,0), nsub = gs.length - 1, someLazy = gs.some(g => g.lazy);
   const vis = gs.map((g,i) => [g,i]).filter(([g]) => isShown(g));
   F.view = vis.filter(([g]) => isOpen(g)).flatMap(([g]) => g.files);
-  $("#fCount").textContent = total ? `${F.q ? `${shown} de ${total}` : fmtNum(total)} archivos${nsub?` · ${nsub} subcarpetas`:""} · ordenado por BPM` : "";
+  $("#fCount").textContent = total || nsub ? `${F.q ? `${shown} de ${total}` : fmtNum(total)} archivos${nsub?` · ${nsub} subcarpeta${nsub===1?"":"s"}`:""}${someLazy ? " o más" : ""} · ordenado por BPM` : "";
   const top = (F.tree.s||[]);
   $("#fSubs").innerHTML = top.length > 1 && !F.q ? top.map(s => {
     const g = gs.find(x => x.nivel===1 && x.ruta[0]===s.n);
-    return `<button type="button" class="sub-btn${g && F.open.has(g.key)?" on":""}" data-jump="${esc(g ? g.key : "")}">${I.folder}<span>${esc(s.n)}</span><small>${g ? g.deep : 0}</small></button>`;
+    return `<button type="button" class="sub-btn${g && F.open.has(g.key)?" on":""}" data-jump="${esc(g ? g.key : "")}">${I.folder}<span>${esc(s.n)}</span><small>${g ? (g.lazyDeep && !g.deep ? "…" : g.deep) : 0}</small></button>`;
   }).join("") : "";
   requestAnimationFrame(() => { const ps = $("#pstick"); if(ps) $(".pack-sheet").style.setProperty("--stick", ps.offsetHeight + "px"); });
   const L = $("#fList");
-  if(!total){ L.innerHTML = `<div class="empty">${F.sinEnlace ? "Este pack aún no tiene archivos publicados." : "Esta carpeta está vacía."}</div>`; return; }
-  if(!shown){ L.innerHTML = `<div class="empty">Ningún archivo coincide con “${esc(F.q)}”.</div>`; return; }
+  if(F.tree.z && !total && !nsub){ L.innerHTML = F.tree.err ? `<div class="empty">${esc(F.tree.err)}<br><br><button type="button" class="btn" data-reopen>Reintentar</button></div>` : Array.from({length:6},()=>`<div class="sk row-sk"></div>`).join(""); return; }
+  if(!total && !someLazy && !nsub){ L.innerHTML = `<div class="empty">${F.sinEnlace ? "Este pack aún no tiene archivos publicados." : "Esta carpeta está vacía."}</div>`; return; }
+  if(F.q && !shown){ L.innerHTML = `<div class="empty">Ningún archivo coincide con “${esc(F.q)}”.${someLazy ? " Abre las carpetas nuevas para buscar dentro de ellas." : ""}</div>`; return; }
   // Solo se dibujan los archivos de las carpetas abiertas, por tandas, para que todo responda al instante.
   const pending = []; let budget = 160;
   const rowsFor = (i, files) => { if(budget > 0){ const now = files.slice(0, budget); budget -= now.length; if(files.length > now.length) pending.push([i, now.length]); return now.map(fileRow).join(""); } pending.push([i, 0]); return ""; };
   L.innerHTML = vis.map(([g,i]) => {
     if(!g.ruta.length) return g.files.length ? `<div class="rows" data-rows="${i}">${rowsFor(i, g.files)}</div>` : "";
     const open = isOpen(g), name = g.ruta[g.ruta.length-1];
-    const link = F.own && g.d && !isDemoId(g.d) ? `<a class="ico drive-download-attn" href="${D.folder(g.d)}" target="_blank" rel="noopener" title="Abrir carpeta en Google Drive para descargar todo" aria-label="Abrir ${esc(name)} en Google Drive">${I.open}</a>` : "";
-    const cnt = g.deep ? (F.q && g.hit !== g.deep ? `${g.hit} de ${g.deep}` : fmtNum(g.deep)) + ` archivo${g.deep===1?"":"s"}` : "vacía";
+    const link = g.d && !isDemoId(g.d) && AJ.descargasCanciones !== false ? `<a class="ico drive-download-attn" href="${D.folder(g.d)}" target="_blank" rel="noopener" title="Abrir carpeta en Google Drive para descargar todo" aria-label="Abrir ${esc(name)} en Google Drive">${I.open}</a>` : "";
+    const cnt = g.lazy ? (g.err ? "no se pudo leer" : open ? "leyendo…" : "abrir para ver")
+              : g.deep ? (F.q && g.hit !== g.deep ? `${g.hit} de ${g.deep}` : fmtNum(g.deep)) + ` archivo${g.deep===1?"":"s"}${g.lazyDeep ? " o más" : ""}` : g.lazyDeep ? "abrir para ver" : "vacía";
+    const inner = open && g.files.length ? `<div class="rows" data-rows="${i}">${rowsFor(i, g.files)}</div>`
+                : open && g.lazy ? (g.err ? `<div class="empty sm">${esc(g.err)} <button type="button" class="linkbtn" data-relive="${esc(g.key)}">Reintentar</button></div>` : `<div class="rows"><div class="sk row-sk"></div><div class="sk row-sk"></div></div>`) : "";
     return `<div class="fgroup${open?" open":""}" style="--lvl:${g.nivel-1}" id="fg-${i}">
       <div class="fhead"><button type="button" class="fsum" data-group="${esc(g.key)}" aria-expanded="${open}">${I.chev}<span class="fic">${I.folder}</span><span class="gname">${esc(name)}</span><small>${cnt}</small></button>${link}</div>
-      ${open && g.files.length ? `<div class="rows" data-rows="${i}">${rowsFor(i, g.files)}</div>` : ""}
+      ${inner}
     </div>`;
   }).join("");
   const seq = F.paint = (F.paint||0) + 1;
@@ -563,17 +704,18 @@ function renderTree(){
   })();
 }
 function fileRow(f){
-  const locked = !f.id, demo = !locked && isDemoId(f.id), on = current && current.id === f.id, playable = f.k==="v" || f.k==="a";
+  const locked = !f.id, demo = !locked && isDemoId(f.id), on = current && current.id === f.id, playable = (f.k==="v" || f.k==="a") && !sinPlayer();
   const icon = locked ? I.lock : f.k==="i" ? I.img : playable ? (on ? I.pause : I.play) : I.file;
   const lead = playable && !locked
     ? `<button type="button" class="fthumb" data-play="${esc(f.id)}" aria-label="${on?"Detener":"Reproducir"} ${esc(f.nombre)}">${icon}</button>`
     : `<span class="fthumb"${locked?' title="Disponible al comprar el pack"':""}>${icon}</span>`;
   const lk = (u,l,ic,cls="") => `<a class="ico ${cls}" href="${demo?"#":u}" ${demo?'data-demo="1"':'target="_blank" rel="noopener"'} aria-label="${l}" title="${l}">${ic}</a>`;
-  const downloadSong = AJ.descargasCanciones !== false;
+  const acts = locked ? "" : (canView(f) ? lk(D.view(f.id),"Abrir en Google Drive",I.open) : "") + (canDl(f) ? lk(D.dl(f.id),f.k === "a" ? "Descargar canción" : "Descargar",I.dl) : "")
+             + (!canDl(f) && playable && !F.own && AJ.descargasCanciones !== false ? `<span class="solo-comp" title="La descarga es para quienes compran el pack">${I.lock}</span>` : "");
   return `<div class="frow${on?" playing":""}${locked?" locked":""}">${lead}
     <div class="ti"><div class="name">${esc(f.nombre.replace(/\.[^.]+$/,""))}</div><div class="sub"><span class="kind">${esc((ext(f.nombre)||"archivo").toUpperCase())}</span></div></div>
     <span class="bpm${f.bpm?"":" none"}">${f.bpm ? esc(f.bpm.txt)+" bpm" : "—"}</span>
-    <div class="racts">${locked ? "" : lk(D.view(f.id),"Abrir en Google Drive",I.open) + (downloadSong ? lk(D.dl(f.id),f.k === "a" ? "Descargar canción" : "Descargar",I.dl) : "")}</div>
+    <div class="racts">${acts}</div>
   </div>`;
 }
 
@@ -735,6 +877,7 @@ function logoutUser(silent){
    ===================================================================== */
 let current = null, queue = [];
 function play(f){
+  if(sinPlayer()) return;
   if(current && current.id === f.id && f.k === "a"){ stop(); return; }
   const demo = isDemoId(f.id);
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
@@ -749,7 +892,8 @@ function play(f){
     $("#dockFrame").textContent = "Reproduciendo en la ventana de video";
     $("#vTitle").textContent = f.nombre.replace(/\.[^.]+$/,""); $("#vMeta").textContent = $("#dockS").textContent;
     $("#vFrame").innerHTML = demo ? "Vista previa de ejemplo · con tu Drive conectado aquí se ve el video" : frame;
-    [["#vOpen",D.view],["#vDl",D.dl]].forEach(([s,fn]) => { const a = $(s); if(demo){ a.href="#"; a.dataset.demo="1"; } else { a.href=fn(f.id); delete a.dataset.demo; } });
+    [["#vOpen",D.view,canView(f)],["#vDl",D.dl,canDl(f)]].forEach(([s,fn,ok]) => { const a = $(s); a.hidden = !ok; if(demo){ a.href="#"; a.dataset.demo="1"; } else { a.href=fn(f.id); delete a.dataset.demo; } });
+    $("#vNote").hidden = canDl(f) || AJ.descargasCanciones === false;
     openModal("#vModal");
   } else $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
   refreshRows();
@@ -1017,9 +1161,18 @@ function readPanel(el){ const o = {}; el.querySelectorAll("[data-f]").forEach(i 
 /* ---------- Carpetas ---------- */
 const E = { portada:"" };
 let FILE_TARGET = "portada";
+const TIPOS = [["Audio","Audio"],["Video","Video"],["Mixto","Mixto (audio y video)"],["Software","Software"],["Herramientas","Herramientas DJ"],["Actualizaciones","Actualizaciones"]];
+const VISIT = [["reproducir","Reproducen todo · descargan solo los que compran"],["publica","Reproducen y descargan todo (carpeta pública)"],["privada","Solo ven la lista (carpeta privada)"],["auto","Automático: según cómo está compartida en Drive"]];
+const VISIT_HELP = {
+  reproducir:"No modifica permisos de Drive. En la versión segura actual, visitantes solo ven nombres; el reproductor público permanece desactivado hasta una verificación adicional.",
+  publica:"No modifica permisos de Drive. En la versión segura actual, visitantes solo ven nombres; el acceso público no se habilita.",
+  privada:"No modifica permisos de Drive. Visitantes solo ven nombres; los compradores autorizados acceden a su contenido.",
+  auto:"No se cambia nada en Drive. Con la reproducción general desactivada, los visitantes solo ven la lista; el acceso de compradores autorizados se mantiene."
+};
+const VISIT_PILL = { reproducir:["Escucha libre","si"], publica:["Pública","si"], privada:["Privada","no"], auto:["Según Drive",""] };
 function carForm(c){
   E.portada = c.portada || "";
-  const isData = /^data:/.test(E.portada), mod = c.modalidad || "Único";
+  const isData = /^data:/.test(E.portada), mod = c.modalidad || "Único", vis = c.visitantes || "auto";
   return `<div class="panel" data-carform="${esc(c.id||"")}" style="margin-bottom:16px">
     <span class="lbl">${c.id ? "Editar carpeta" : "Nueva carpeta"}</span>
     <div class="cedit">
@@ -1031,10 +1184,11 @@ function carForm(c){
         <label class="w2">Modalidad de pago<select data-f="modalidad">${Object.keys(MODS).map(m=>`<option value="${m}" ${m===mod?"selected":""}>${{"Único":"Pago único","Mensual":"Mensual (1 mes)","Anual":"Anual (12 meses)","Personalizado":"Personalizado (meses)"}[m]}</option>`).join("")}</select></label>
         <label class="w2" data-mesbox ${mod!=="Personalizado"?"hidden":""}>Duración en meses<input data-f="meses" type="number" min="1" max="120" value="${esc(mod==="Personalizado" ? (c.meses||3) : 3)}"></label>
         <label class="w6">Descripción<textarea data-f="descripcion" maxlength="400">${esc(c.descripcion||"")}</textarea></label>
-        <label class="w2">Tipo<select data-f="tipo">${["Video","Audio","Mixto","Software"].map(t=>`<option ${t===(c.tipo||"Video")?"selected":""}>${t}</option>`).join("")}</select></label>
+        <label class="w2">Tipo (botón de inicio)<select data-f="tipo">${TIPOS.map(([t,l])=>`<option value="${t}" ${t===(c.tipo||"Audio")?"selected":""}>${l}</option>`).join("")}</select></label>
         <label class="w2">Orden<input data-f="orden" type="number" min="1" value="${esc(c.orden || A.cars.length+1)}"></label>
         <label class="tick w2" style="align-self:end;padding-bottom:12px"><input type="checkbox" data-f="visible" ${c.visible!==false?"checked":""}><span>Visible en la web</span></label>
-        <label class="w6">Enlace de la carpeta en Google Drive<input data-f="drive" value="${esc(c.drive ? D.folder(c.drive) : "")}" placeholder="https://drive.google.com/drive/folders/…"><span class="help">No necesita ser pública: se comparte como lector solo con quien apruebes. Al guardar, su contenido aparece en la web al instante.</span></label>
+        <label class="w6">Enlace de la carpeta en Google Drive<input data-f="drive" value="${esc(c.drive ? D.folder(c.drive) : "")}" placeholder="https://drive.google.com/drive/folders/…"><span class="help">Guardar el enlace no cambia permisos de Drive. La sincronización automática está temporalmente pausada; los índices existentes se conservan.</span></label>
+        <label class="w6">Visitantes que aún no compran<select data-f="visitantes">${VISIT.map(([v,l])=>`<option value="${v}" ${v===vis?"selected":""}>${l}</option>`).join("")}</select><span class="help" data-vishelp>${esc(VISIT_HELP[vis])}</span></label>
         <label class="w6">Portada (enlace de imagen o de Google Drive)<input id="cPortada" value="${esc(isData ? "Imagen subida desde tu equipo" : E.portada)}" placeholder="https://drive.google.com/file/d/…/view"></label>
       </div>
     </div>
@@ -1047,7 +1201,8 @@ function renderCars(){
   $("#cRows").innerHTML = A.cars.map(c => {
     const id = esc(c.id), n = A.conteos[c.id];
     return `<div class="crow">${coverHtml(c, true)}
-      <div class="cn"><b>${esc(c.nombre)}</b><span>${esc(c.drive ? (c.descripcion || "Carpeta de Drive conectada") : "Falta conectar la carpeta de Drive")}</span></div>
+      <div class="cn"><b>${esc(c.nombre)}</b><span>${esc(c.tipo || "")} · ${esc(c.drive ? (c.descripcion || "Carpeta de Drive conectada") : "Falta conectar la carpeta de Drive")}</span>
+        <span class="vis-row"><span class="pill ${VISIT_PILL[c.visitantes||"auto"][1]}">${VISIT_PILL[c.visitantes||"auto"][0]}</span>${c.publica ? `<span class="dim">En Drive: cualquier persona con el enlace</span>` : c.drive ? `<span class="dim">En Drive: privada</span>` : ""}</span></div>
       <span class="num c-tipo">${n != null ? fmtNum(n) : "—"}</span>
       <span class="num c-precio" style="color:var(--ink)">${esc(money(c.precio))}<br><span class="dim">${esc(Number(c.precio)>0 ? periodo(c) : "")}</span></span>
       <span class="c-vis"><span class="pill ${c.visible!==false?"si":"no"}">${c.visible!==false?"Visible":"Oculta"}</span></span>
@@ -1094,11 +1249,19 @@ function fillAjustes(){
   if(J.dirty) return; // no borrar cambios mientras se edita por un refresco automático
   $("#jMail").value = A.aj.correoAvisos || ""; $("#jWa").value = A.aj.whatsapp || ""; $("#jSite").value = A.aj.sitio || "";
   $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false; $("#jDownloadAudio").checked = A.aj.descargasCanciones !== false;
+  const bt = botonesDe(A.aj.botones); $$("[data-boton]").forEach(i => i.checked = bt[i.dataset.boton]);
+  $("#jRepro").value = reproDe(A.aj.reproduccion); paintReproHelp();
   J.fondo = A.aj.fondo || ""; paintFondoPrev();
   const tot = Object.values(A.conteos||{}).reduce((t,n)=>t+(Number(n)||0),0);
-  $("#jIdx").textContent = A.indexado ? `Actualizado ${hace(A.indexado)} · ${fmtNum(tot)} archivos. Revisa cambios en Drive cada 10 minutos.` : "Aún no se ha generado. Pulsa “Actualizar contenido ahora”.";
+  $("#jIdx").textContent = A.indexado ? `${fmtNum(tot)} archivos en el último índice. La sincronización automática y la reconstrucción manual están pausadas para proteger los índices existentes.` : "La sincronización está pausada para proteger los índices existentes.";
   $("#jQuota").textContent = A.cuota != null ? `Correos disponibles hoy en tu cuenta de Google: ${A.cuota}.` : "";
 }
+const REPRO_HELP = {
+  todos:"La reproducción pública está temporalmente desactivada en la versión segura. Los visitantes solo ven nombres; no se cambian permisos de Drive.",
+  compradores:"La reproducción está temporalmente desactivada. Visitantes solo ven nombres; no se cambian permisos de Drive.",
+  nadie:"El reproductor web está desactivado. No se cambian permisos de Drive."
+};
+function paintReproHelp(){ $("#jReproHelp").textContent = REPRO_HELP[$("#jRepro").value] || ""; }
 function paintFondoPrev(){
   const u = coverUrl(J.fondo);
   $("#jFondo").value = /^data:/.test(J.fondo) ? "Imagen subida desde tu equipo" : J.fondo;
@@ -1109,7 +1272,8 @@ async function saveAjustes(e){
   const err = $("#jErr"), b = $("#jSave"); err.textContent = ""; busy(b, true);
   try{
     const r = await adminCall("guardarAjustes", { ajustes:{ correoAvisos:$("#jMail").value.trim(), whatsapp:$("#jWa").value, sitio:$("#jSite").value.trim(),
-      moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked, descargasCanciones:$("#jDownloadAudio").checked } });
+      moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked, descargasCanciones:$("#jDownloadAudio").checked,
+      botones:Object.fromEntries($$("[data-boton]").map(i => [i.dataset.boton, i.checked])), reproduccion:$("#jRepro").value } });
     A.aj = r.ajustes; J.dirty = false;
     applyCatalog({ carpetas:CARP, ajustes:r.ajustes });
     store.set(CK.cat, { t:Date.now(), v:{ carpetas:CARP, ajustes:r.ajustes } });
@@ -1173,8 +1337,8 @@ async function adminAction(btn){
       toast("Datos guardados.", "ok"); A.editReg = null;
     } else if(act === "carSave"){
       const v = readPanel(panel);
-      const r = await adminCall("guardarCarpeta", { carpeta:{ id, nombre:v.nombre, descripcion:v.descripcion, precio:v.precio, modalidad:v.modalidad, meses:v.meses, tipo:v.tipo, orden:v.orden, visible:v.visible, drive:v.drive, portada:E.portada } });
-      toast(r.indexado ? "Carpeta guardada y contenido actualizado." : r.pendiente ? "Carpeta guardada. Su contenido es grande: se termina de preparar en 1 o 2 minutos." : "Carpeta guardada.", "ok"); A.editCar = null;
+      const r = await adminCall("guardarCarpeta", { carpeta:{ id, nombre:v.nombre, descripcion:v.descripcion, precio:v.precio, modalidad:v.modalidad, meses:v.meses, tipo:v.tipo, orden:v.orden, visible:v.visible, drive:v.drive, portada:E.portada, visitantes:v.visitantes } });
+      toast((r.indexado ? "Carpeta guardada y contenido actualizado." : r.pendiente ? "Carpeta guardada. La indexación quedó pendiente." : "Carpeta guardada.") + " Los permisos de Drive no se modificaron.", "ok"); A.editCar = null;
       loadCatalog(true); loadIndex(true);
     } else if(act === "carDel"){
       await adminCall("eliminarCarpeta", { id }); A.armed = null; toast("Carpeta quitada de la web. Tu Drive no se tocó.");
@@ -1300,9 +1464,11 @@ function bind(){
     const pk = t.closest("[data-pack]"); if(pk){ const m = t.closest("#mModal"); if(m) closeModal(m); openPack(pk.dataset.pack, true); return; }
     const gp = t.closest("[data-group]"); if(gp){ toggleGroup(gp.dataset.group); return; }
     const jp = t.closest("[data-jump]"); if(jp){
-      const k = jp.dataset.jump; F.open.add(k); renderTree();
+      const k = jp.dataset.jump; F.open.add(k); renderTree(); refreshLevel(k.split("\u0001"));
       const g = F.groups.findIndex(x => x.key === k), el = document.getElementById("fg-" + g);
       if(el) el.scrollIntoView({ behavior:"smooth", block:"start" }); return; }
+    const rl = t.closest("[data-relive]"); if(rl){ const ruta = rl.dataset.relive.split("\u0001"), n = nodeAt(ruta); if(n) delete n.err; renderTreeKeep(); refreshLevel(ruta, true); return; }
+    const ct = t.closest("[data-cat]"); if(ct){ setCat(ct.dataset.cat, !ct.hasAttribute("data-cat-filter")); return; }
     const p = t.closest("[data-play]"); if(p){ const f = F.view.find(x => x.id === p.dataset.play); if(f) play(f); return; }
     if(t.closest("[data-retry]")){ loadCatalog(true); loadIndex(true); return; }
     if(t.closest("[data-reopen]")){ if(F.c) openPack(F.c.id, false); return; }
@@ -1342,6 +1508,7 @@ function bind(){
   });
   document.addEventListener("change", e => {
     if(e.target.matches('[data-carform] select[data-f="modalidad"]')){ e.target.closest("[data-carform]").querySelector("[data-mesbox]").hidden = e.target.value !== "Personalizado"; }
+    if(e.target.matches('[data-carform] select[data-f="visitantes"]')){ e.target.closest("[data-carform]").querySelector("[data-vishelp]").textContent = VISIT_HELP[e.target.value] || ""; }
   });
   let qt; $("#fq").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(() => { F.q = e.target.value; renderTree(); }, 120); });
   $("#fBuy").addEventListener("click", () => F.c && buy(F.c.id));
@@ -1363,7 +1530,7 @@ function bind(){
   $$("#segEst button").forEach(b => b.addEventListener("click", () => { A.est = b.dataset.est; $$("#segEst button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderRegs(); }));
   $$("#segSol button").forEach(b => b.addEventListener("click", () => { A.solF = b.dataset.sol; $$("#segSol button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderSols(); }));
   $("#ajForm").addEventListener("input", () => { J.dirty = true; });
-  $("#ajForm").addEventListener("change", () => { J.dirty = true; });
+  $("#ajForm").addEventListener("change", e => { J.dirty = true; if(e.target.id === "jRepro") paintReproHelp(); });
   $("#ajForm").addEventListener("submit", saveAjustes);
   $("#jTest").addEventListener("click", async () => { const b = $("#jTest"); $("#jErr").textContent = ""; busy(b, true);
     try{ const r = await adminCall("probarCorreo"); toast(`Correo de prueba enviado a ${r.correo}.`, "ok"); }catch(ex){ $("#jErr").textContent = ex.message; } finally{ busy(b, false); } });
@@ -1386,6 +1553,7 @@ function fromHash(){
   if(h === "registro") openSection("registro");
   else if(h === "ingresar" || h === "cuenta") openSection("cuenta");
   else if(h === "admin") openSection("admin");
+  else if(CATS.some(x => x.hash === h)){ const cat = CATS.find(x => x.hash === h); if(catOn(cat.k)) setCat(cat.k, true); }
   else if(h.startsWith("pack-")){ const c = CARP.find(x => "pack-" + slug(x.nombre) === h); if(c && !$("#fModal").classList.contains("open")) openPack(c.id, false); }
 }
 
