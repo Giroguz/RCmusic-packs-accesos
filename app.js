@@ -483,6 +483,7 @@ function renderPacks(){
     const free = !(Number(c.precio) > 0), st = packState(c.id), mine = miAcceso(c.id), lib = libreDe(c);
     const badge = st==="own" ? `<span class="badge-st own">Tu pack${mine.hasta?` · hasta ${esc(fechaCorta(mine.hasta))}`:""}</span>`
                 : st==="req" ? `<span class="badge-st req">Solicitud enviada</span>`
+                : free ? `<span class="badge-st free">Pack gratuito</span>`
                 : lib===2 ? `<span class="badge-st free">Escucha y descarga libre</span>` : lib===1 ? `<span class="badge-st free">Escucha libre</span>` : "";
     const foot = st==="own" ? `<button type="button" class="btn grad sm" data-pack="${esc(c.id)}">${sinPlayer() ? "Abrir" : "Abrir y reproducir"}</button>`
                : `<button type="button" class="btn light sm" data-pack="${esc(c.id)}">${lib ? (/video/i.test(c.tipo) ? "Ver y reproducir" : "Escuchar") : "Ver contenido"}</button>` +
