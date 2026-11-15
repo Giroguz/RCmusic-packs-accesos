@@ -938,15 +938,10 @@ function logoutUser(silent){
 /* =====================================================================
    Reproducción
    ===================================================================== */
-let current = null, queue = [], previewTimeout = null;
-const PREVIEW_LIMIT_MS = 110000; // muestra de 1 minuto y 50 segundos
-function clearPreviewTimeout(){
-  if(previewTimeout){ clearTimeout(previewTimeout); previewTimeout = null; }
-}
+let current = null, queue = [];
 function play(f){
   if(sinPlayer()) return;
   if(current && current.id === f.id && f.k === "a"){ stop(); return; }
-  clearPreviewTimeout();
   const demo = isDemoId(f.id);
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => x.id && (x.k==="v" || x.k==="a"));
@@ -965,24 +960,9 @@ function play(f){
     $("#vNote").hidden = canDl(f) || AJ.descargasCanciones === false;
     openModal("#vModal");
   } else $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
-  if(!demo && (f.k === "a" || f.k === "v")){
-    const playingId = f.id;
-    previewTimeout = setTimeout(() => {
-      if(!current || current.id !== playingId) return;
-      if(current.k === "v"){
-        $("#vFrame").innerHTML = "Muestra de video finalizada (1:50).";
-        $("#dockFrame").textContent = "Muestra de video finalizada (1:50).";
-      } else {
-        $("#dockFrame").textContent = "Muestra de audio finalizada (1:50).";
-      }
-      previewTimeout = null;
-      toast("Fin de la muestra de 1 minuto y 50 segundos.");
-    }, PREVIEW_LIMIT_MS);
-  }
   refreshRows();
 }
 function stop(){
-  clearPreviewTimeout();
   current = null;
   document.body.classList.remove("playing"); $("#dock").classList.remove("on"); $("#disc").classList.remove("spin");
   setTimeout(() => { if(!current) $("#dockFrame").innerHTML = ""; }, 400);
