@@ -939,7 +939,7 @@ function logoutUser(silent){
    Reproducción
    ===================================================================== */
 let current = null, queue = [], previewTimeout = null;
-const PREVIEW_LIMIT_MS = 110000;
+const PREVIEW_LIMIT_MS = 120000;
 function clearPreviewTimeout(){
   if(previewTimeout){ clearTimeout(previewTimeout); previewTimeout = null; }
 }
@@ -949,7 +949,7 @@ function startPreviewLimit(f){
   const playingId = f.id;
   previewTimeout = setTimeout(() => {
     if(!current || current.id !== playingId) return;
-    const message = "Muestra finalizada (1:50).";
+    const message = "Tiempo de prueba finalizado (2 minutos desde el clic).";
     // Quitar el iframe detiene también el reproductor que vive dentro de Drive.
     $("#dockFrame").replaceChildren();
     $("#vFrame").replaceChildren();
@@ -967,7 +967,7 @@ function startPreviewLimit(f){
     $("#hudR").textContent = "— BPM";
     $("#hudNow").textContent = message;
     refreshRows();
-    toast("Fin de la muestra de 1 minuto y 50 segundos.");
+    toast("Tiempo de prueba de 2 minutos agotado.");
   }, PREVIEW_LIMIT_MS);
 }
 function play(f){
