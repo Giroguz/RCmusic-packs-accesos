@@ -1672,7 +1672,7 @@ function fromHash(){
   if(!store.get(CK.cat)) $("#packGrid").innerHTML = Array.from({length:6}, () => `<div class="sk pack-sk"></div>`).join("");
   bind(); installBackNavigation(); bgLights(); scope();
   const cat = loadCatalog();
-  loadIndex();                 // en paralelo: lista de contenido de todos los packs
+  // El índice se carga al abrir un pack, no durante la visita inicial.
   if(U.token) loadCuenta();    // en paralelo: sesión del usuario y sus packs
   await cat;
   fromHash();
