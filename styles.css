@@ -672,3 +672,17 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
   .catbtn b{font-size:13px;letter-spacing:-.01em}
   .catbtn small{font-size:11px}
 }
+
+/* Resultados de búsqueda en packs grandes */
+.fgroup.busq .fsum{cursor:default}
+.fgroup.busq .fsum .gname{white-space:normal}
+.fgroup.busq > .fhead{position:static}
+/* Aviso mientras carga el reproductor de Google Drive */
+#dockFrame,#vFrame{position:relative}
+.ldr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;font:12.5px var(--f-mono);color:var(--mute);pointer-events:none;z-index:0}
+.ldr i{width:14px;height:14px;border-radius:50%;border:2px solid rgba(47,216,230,.25);border-top-color:var(--cyan);animation:ldrSpin .8s linear infinite}
+@keyframes ldrSpin{to{transform:rotate(360deg)}}
+#dockFrame iframe,#vFrame iframe{position:relative;z-index:1}
+
+.botones-nombres-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}.botones-nombres-grid label{display:grid;gap:5px;color:var(--muted);font-size:12px}.botones-nombres-grid input{width:100%;min-width:0}
+@media(max-width:600px){.botones-nombres-grid{grid-template-columns:1fr}}

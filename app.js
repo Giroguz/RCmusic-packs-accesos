@@ -70,11 +70,14 @@ function coverUrl(v){
 
 /* ---------- Formatos ---------- */
 const BOTONES_DEF = { todos:true, audio:true, video:true, software:true, herramientas:true, actualizaciones:true };
-let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true, botones:{ ...BOTONES_DEF }, reproduccion:"nadie" };
+const BOTONES_NOMBRES_DEF = { todos:"Todos", audio:"Audio", video:"Videos", software:"Software", herramientas:"Herramientas DJ", actualizaciones:"Actualizaciones" };
+let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true, botones:{ ...BOTONES_DEF }, nombresBotones:{ ...BOTONES_NOMBRES_DEF }, reproduccion:"nadie" };
 // Reproducción en la web (Ajustes): todos · compradores · nadie
 const reproDe = r => ["todos","compradores","nadie"].includes(r) ? r : "nadie";
 const sinPlayer = () => AJ.reproduccion === "nadie";
 const botonesDe = b => Object.fromEntries(Object.keys(BOTONES_DEF).map(k => [k, !(b && b[k] === false)]));
+const nombresBotonesDe = b => Object.fromEntries(Object.keys(BOTONES_NOMBRES_DEF).map(k => [k, String((b||{})[k] || BOTONES_NOMBRES_DEF[k]).trim().slice(0,40) || BOTONES_NOMBRES_DEF[k]]));
+const nombreBoton = k => AJ.nombresBotones[k] || BOTONES_NOMBRES_DEF[k];
 const wa = () => AJ.whatsapp || CONFIG.whatsapp;
 const money = p => Number(p) > 0 ? `${AJ.moneda || CONFIG.moneda} ${Number(p).toFixed(2)}` : "Gratis";
 const MODS = { "Único":0, "Mensual":1, "Anual":12, "Personalizado":null };
@@ -220,7 +223,7 @@ function demoTree(nombre, v, ids, ruta){
 // Lo que ve un visitante en modo demostración (imita vistaPublica_ del servidor)
 function demoVista(n, modo){
   const pub = modo === "reproducir" || modo === "publica", dl = modo === "publica", o = { n:n.n, h:n.h };
-  if(pub) o.p = 1; if(dl && n.d) o.d = n.d; if(n.z) o.z = 1;
+  if(pub) o.p = 1; if(dl && n.d) o.d = n.d; if(n.z) o.z = 1; if(n.c !== undefined) o.c = n.c;
   o.f = n.f.map(x => pub && x[2] ? [x[0], x[1], x[2], dl ? 3 : 1] : [x[0], x[1]]);
   o.s = n.s.map(x => demoVista(x, modo));
   return o;
@@ -233,7 +236,7 @@ const isoIn = n => new Date(Date.now()+n*864e5).toISOString();
 const addMonths = (iso, n) => { const x = new Date(iso); x.setMonth(x.getMonth()+n); return x.toISOString(); };
 const uid = () => Math.random().toString(36).slice(2,10);
 const demoCars = () => store.get(DK.car) || CONFIG.carpetasDemo.map((c,i)=>({ id:"c"+(i+1), orden:i+1, portada:"", drive:"", visible:true, ...c }));
-const demoAj = () => ({ correoAvisos:"", whatsapp:"", moneda:CONFIG.moneda, avisarUsuario:true, sitio:"", fondo:"", luces:true, ...(store.get(DK.aj) || {}), botones:botonesDe((store.get(DK.aj) || {}).botones) });
+const demoAj = () => ({ correoAvisos:"", whatsapp:"", moneda:CONFIG.moneda, avisarUsuario:true, sitio:"", fondo:"", luces:true, ...(store.get(DK.aj) || {}), botones:botonesDe((store.get(DK.aj) || {}).botones), nombresBotones:nombresBotonesDe((store.get(DK.aj) || {}).nombresBotones) });
 function demoRegs(){
   return store.get(DK.regs) || [
     { id:"ej01", fecha:isoIn(-0.02), nombre:"DJ Ejemplo Uno", correo:"ejemplo.uno@gmail.com", whatsapp:"51911111111", estado:"Registrado", nota:"", accesos:[] },
@@ -270,8 +273,8 @@ async function demoApi(accion, d){
   };
   switch(accion){
     case "catalogo": { const aj = demoAj();
-      return { ok:true, v:4, ajustes:{ whatsapp:aj.whatsapp, moneda:aj.moneda, fondo:aj.fondo, luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:aj.botones, reproduccion:reproDe(aj.reproduccion) },
-        carpetas: vis.map(c => ({ ...c, visitantes:c.visitantes||"auto", libre:demoLibre(c), cantidad: DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0 })) }; }
+      return { ok:true, v:4, ajustes:{ whatsapp:aj.whatsapp, moneda:aj.moneda, fondo:aj.fondo, luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:aj.botones, nombresBotones:nombresBotonesDe(aj.nombresBotones), reproduccion:reproDe(aj.reproduccion) },
+        carpetas: vis.map(c => ({ ...c, visitantes:c.visitantes||"auto", libre:demoLibre(c), grande:!!window.__demoGrande, cantidad: DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0 })) }; }
     case "indice": { const packs = {}; vis.forEach(c => { if(DEMO_FILES[c.nombre] && !(window.__demoPend > 0)) packs[c.id] = demoVista(demoTree(c.nombre, DEMO_FILES[c.nombre], true), demoModo(c)); }); return { ok:true, packs }; }
     case "contenido": {
       const c = cars.find(x=>x.id===d.id); if(!c) throw new Error("Este pack ya no está disponible.");
@@ -281,6 +284,13 @@ async function demoApi(accion, d){
       const t = demoTree(c.nombre, DEMO_FILES[c.nombre], true);
       return acceso ? { ok:true, acceso:true, hasta:acc ? acc.hasta : "", drive:"", arbol:t } : { ok:true, acceso:false, arbol:demoVista(t, demoModo(c)) };
     }
+    case "buscar": {
+      const c = cars.find(x=>x.id===d.pack); if(!c) throw new Error("Este pack ya no está disponible.");
+      const u = user(), acceso = d.admin==="demo-token" || !!(u && u.accesos.find(a=>a.carpetaId===c.id && activo(a)));
+      const qs = String(d.q||"").toLowerCase().split(/\s+/).filter(Boolean), t = demoTree(c.nombre, DEMO_FILES[c.nombre]||[], true), v = acceso ? t : demoVista(t, demoModo(c)), r = [];
+      (function walk(n, ruta){ n.f.forEach(x => { const s = (x[0] + " " + ruta.join(" / ")).toLowerCase(); if(qs.every(q => s.includes(q))) r.push({ r:ruta, f:x }); }); n.s.forEach(s => walk(s, ruta.concat(s.n))); })(v, []);
+      return { ok:true, acceso, total:r.length, r:r.slice(0,300) };
+    }
     case "carpeta": {
       const c = cars.find(x=>x.id===d.pack); if(!c) throw new Error("Este pack ya no está disponible.");
       if(!DEMO_FILES[c.nombre]) return { ok:true, sinEnlace:true, acceso:false, nodo:{ n:c.nombre, f:[], s:[] } };
@@ -288,7 +298,7 @@ async function demoApi(accion, d){
       const t = demoTree(c.nombre, DEMO_FILES[c.nombre], true);
       const find = n => (!d.folder || n.h === d.folder || n.d === d.folder) ? n : n.s.map(find).find(Boolean);
       const n = find(t); if(!n) throw new Error("Esa carpeta ya no está en este pack.");
-      const lvl = { ...n, s:n.s.map(x => ({ n:x.n, d:x.d, h:x.h, f:[], s:[], z:1 })) };
+      const lvl = { ...n, c:countTree(n), s:n.s.map(x => ({ n:x.n, d:x.d, h:x.h, c:countTree(x), f:[], s:[], z:1 })) };
       return { ok:true, acceso, nodo: acceso ? lvl : demoVista(lvl, demoModo(c)) };
     }
     case "registrar": {
@@ -367,7 +377,7 @@ async function demoApi(accion, d){
     case "guardarAjustes": { tok(); const a = d.ajustes;
       if(a.correoAvisos && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.correoAvisos)) throw new Error("El correo para avisos no es válido.");
       if(a.sitio && !/^https:\/\//.test(a.sitio)) throw new Error("La dirección de la web debe empezar con https://");
-      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false, descargasCanciones:a.descargasCanciones!==false, botones:botonesDe(a.botones), reproduccion:reproDe(a.reproduccion) };
+      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false, descargasCanciones:a.descargasCanciones!==false, botones:botonesDe(a.botones), nombresBotones:nombresBotonesDe(a.nombresBotones), reproduccion:reproDe(a.reproduccion) };
       store.set(DK.aj, aj); return { ok:true, ajustes:aj }; }
     case "probarCorreo": tok(); throw new Error("En modo demostración no se envían correos. Conecta el servidor para probarlo.");
   }
@@ -384,7 +394,7 @@ const CK = { cat:"rc5_cat", idx:"rc5_idx", mail:"rc5_mail", user:"rc5_user", own
 function applyCatalog(r){
   CARP = r.carpetas || [];
   const aj = r.ajustes || {};
-  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:botonesDe(aj.botones), reproduccion:reproDe(aj.reproduccion) };
+  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:botonesDe(aj.botones), nombresBotones:nombresBotonesDe(aj.nombresBotones), reproduccion:reproDe(aj.reproduccion) };
   if(sinPlayer() && typeof current !== "undefined" && current) stop();
   if(CAT && !catOn(CAT)) CAT = "";
   applyFondo(); renderCats(); renderPacks(); renderHome();
@@ -428,11 +438,11 @@ function packState(id){
 }
 /* ---------- Botones de categoría: Audio · Videos · Software · Actualizaciones ---------- */
 const CATS = [
-  { k:"audio",           label:"Audio",           tipos:["Audio","Mixto"], icon:"audio",    hash:"audio" },
-  { k:"video",           label:"Videos",          tipos:["Video","Mixto"], icon:"video",    hash:"videos" },
-  { k:"software",        label:"Software",        tipos:["Software"],      icon:"software", hash:"software" },
-  { k:"herramientas",    label:"Herramientas DJ", tipos:["Herramientas"],  icon:"tools",    hash:"herramientas" },
-  { k:"actualizaciones", label:"Actualizaciones", tipos:["Actualizaciones"], icon:"updates", hash:"actualizaciones" }
+  { k:"audio",           label:nombreBoton("audio"),           tipos:["Audio","Mixto"], icon:"audio",    hash:"audio" },
+  { k:"video",           label:nombreBoton("video"),          tipos:["Video","Mixto"], icon:"video",    hash:"videos" },
+  { k:"software",        label:nombreBoton("software"),        tipos:["Software"],      icon:"software", hash:"software" },
+  { k:"herramientas",    label:nombreBoton("herramientas"), tipos:["Herramientas"],  icon:"tools",    hash:"herramientas" },
+  { k:"actualizaciones", label:nombreBoton("actualizaciones"), tipos:["Actualizaciones"], icon:"updates", hash:"actualizaciones" }
 ];
 let CAT = "";
 const catOn = k => AJ.botones[k] !== false;
@@ -440,15 +450,16 @@ const tipoNorm = t => String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,
 const enCat = (c, k) => { const cat = CATS.find(x => x.k === k); return !cat || cat.tipos.some(t => tipoNorm(t) === tipoNorm(c.tipo)); };
 const packsDe = k => CARP.filter(c => enCat(c, k));
 function renderCats(){
+  CATS.forEach(x => { x.label = nombreBoton(x.k); });
   const on = CATS.filter(x => catOn(x.k));
-  const hero = $("#heroCats"), heroBtns = (catOn("todos") ? [{ k:"", label:"Todos", icon:"grid" }] : []).concat(on);
+  const hero = $("#heroCats"), heroBtns = (catOn("todos") ? [{ k:"", label:nombreBoton("todos"), icon:"grid" }] : []).concat(on);
   hero.innerHTML = heroBtns.length ? heroBtns.map(x => { const n = x.k ? packsDe(x.k).length : CARP.length;
       return `<button type="button" class="catbtn" data-cat="${x.k}" aria-label="${esc(x.label)}: ${n} pack${n===1?"":"s"}"><span class="cic">${I[x.icon]}</span><span class="ctx2"><b>${esc(x.label)}</b><small>${n ? `${n} pack${n===1?"":"s"}` : "Próximamente"}</small></span></button>`; }).join("")
     : `<a class="btn grad lg" href="#packs">Ver los packs</a>`;
   hero.classList.toggle("solo", !heroBtns.length);
   const bar = $("#packFilter");
   bar.hidden = !on.length;
-  bar.innerHTML = on.length ? [{ k:"", label:"Todos", icon:"grid" }].concat(on).map(x =>
+  bar.innerHTML = on.length ? [{ k:"", label:nombreBoton("todos"), icon:"grid" }].concat(on).map(x =>
     `<button type="button" data-cat="${x.k}" data-cat-filter aria-pressed="${CAT === x.k}">${I[x.icon]}<span>${esc(x.label)}</span></button>`).join("") : "";
 }
 function setCat(k, go){
@@ -497,11 +508,15 @@ function renderPacks(){
 /* =====================================================================
    Vista de un pack
    ===================================================================== */
-const F = { c:null, tree:null, own:false, q:"", groups:[], view:[], req:0, open:new Set(), live:{} };
+const F = { c:null, tree:null, own:false, q:"", groups:[], view:[], req:0, open:new Set(), live:{}, big:false, res:null };
+// Packs enormes (miles de archivos): se cargan carpeta por carpeta y se buscan en el servidor
+const BIG = {};
+const esGrande = c => !!(c && (c.grande || Number(c.cantidad) > 3000 || (IDX[c.id] && IDX[c.id].grande)));
 const canOpenAll = id => !!(miAcceso(id) || A.token);
 async function openPack(id, push){
   const c = CARP.find(x=>String(x.id)===String(id)); if(!c) return;
-  F.c = c; F.q = ""; $("#fq").value = ""; F.open = new Set(); F.tree = null; F.own = false; F.drive = ""; F.sinEnlace = false; F.live = {};
+  F.c = c; F.q = ""; $("#fq").value = ""; F.open = new Set(); F.tree = null; F.own = false; F.drive = ""; F.sinEnlace = false; F.live = {}; F.res = null;
+  F.big = esGrande(c); $("#fCount").textContent = ""; $("#fSubs").innerHTML = ""; F.res = null;
   $("#fCover").innerHTML = coverHtml(c);
   $("#fMeta").innerHTML = `<span>${esc(c.tipo||"Pack")}</span>${c.cantidad?`<span>/</span>${fmtNum(c.cantidad)} archivos`:""}`;
   $("#fName").textContent = c.nombre;
@@ -518,6 +533,7 @@ async function openPack(id, push){
   openModal("#fModal");
   $(".pcontent").scrollTop = 0; $(".pack-sheet").scrollTop = 0;
   const seq = ++F.req;
+  if(F.big) return openBig(c, seq);
   // 1) Lo que ya está en el navegador se muestra al instante
   if(canOpenAll(c.id) && OWN[c.id]){ F.tree = OWN[c.id].arbol; F.own = true; F.drive = OWN[c.id].drive; }
   else if(IDX[c.id]) F.tree = IDX[c.id];
@@ -535,12 +551,21 @@ async function openPack(id, push){
   // 3) Lo que se está viendo se confirma con Google Drive en este momento: archivos nuevos, renombrados o quitados
   if(seq === F.req && F.tree && !F.sinEnlace) refreshLevel([]);
 }
+// Pack enorme: se muestra la raíz desde el índice/cache y se pide cada subcarpeta al abrirla.
+async function openBig(c, seq){
+  const key = c.id + (canOpenAll(c.id) ? ":own" : ":pub"), mem = BIG[key];
+  F.own = canOpenAll(c.id); F.tree = mem || { n:c.nombre, f:[], s:[], z:1 }; BIG[key] = F.tree;
+  renderTree(); paintPackState();
+  if(F.tree.z) await refreshLevel([], true, true);
+  if(seq === F.req) refreshLevel([]);
+}
 // Pide el contenido al servidor. Si el pack es nuevo o enorme y su índice aún se prepara, se muestra igual,
 // leyendo sus carpetas directo de Google Drive (nivel por nivel), mientras el índice se termina en segundo plano.
 async function loadContent(c, seq, n){
   const own = canOpenAll(c.id);
   const r = own ? await fetchOwn(c.id) : await api("contenido", { id:c.id });
   if(seq !== F.req) return;
+  if(r.grande){ c.grande = true; F.big = true; return openBig(c, seq); }
   if(r.pendiente){
     if(own) paintPackState(r);
     if(!F.tree){ F.tree = { n:c.nombre, f:[], s:[], z:1 }; F.own = own && !!r.acceso; renderTree(); refreshLevel([], true); }
@@ -560,17 +585,18 @@ async function fetchOwn(id){
 
 /* ---------- Carpetas en vivo (un nivel a la vez, directo de Google Drive) ---------- */
 function nodeAt(ruta){ let n = F.tree; for(const name of ruta){ if(!n) return null; n = (n.s||[]).find(x => x.n === name); } return n || null; }
-async function refreshLevel(ruta, force){
+// rapido: el nivel sale del índice del servidor (al instante); sin rapido se lee de Drive en vivo
+async function refreshLevel(ruta, force, rapido){
   const c = F.c; if(!c || !F.tree) return;
   const key = keyOf(ruta), node = nodeAt(ruta); if(!node) return;
-  if(!force && F.live[key] && Date.now() - F.live[key] < 30e3) return;
+  if(!rapido && !force && F.live[key] && Date.now() - F.live[key] < 30e3) return;
   const handle = ruta.length ? (node.h || node.d || "") : "";
   if(ruta.length && !handle) return;            // índice antiguo sin código de carpeta: se queda con el índice
-  F.live[key] = Date.now();
+  if(!rapido) F.live[key] = Date.now();
   const seq = F.req;
   let r;
-  try{ r = await api("carpeta", { pack:c.id, folder:handle, token:U.token||"", admin:A.token||"" }); }
-  catch(ex){ delete F.live[key]; if(seq === F.req && node.z){ node.err = ex.message; renderTreeKeep(); } return; }
+  try{ r = await api("carpeta", { pack:c.id, folder:handle, token:U.token||"", admin:A.token||"", rapido:!!rapido }); }
+  catch(ex){ if(!rapido) delete F.live[key]; if(seq === F.req && node.z){ node.err = ex.message; renderTreeKeep(); } return; }
   if(seq !== F.req || F.c !== c || r.sinEnlace) return;
   const tgt = nodeAt(ruta); if(!tgt) return;
   mergeLevel(tgt, r.nodo, ruta);
@@ -581,14 +607,14 @@ async function refreshLevel(ruta, force){
 function mergeLevel(tgt, fr, ruta){
   tgt.f = fr.f || [];
   ["d","p"].forEach(k => { if(fr[k] !== undefined && fr[k] !== "") tgt[k] = fr[k]; else delete tgt[k]; });
-  if(fr.h) tgt.h = fr.h; else delete tgt.h;
-  if(fr.k) tgt.k = fr.k; else delete tgt.k;
+  if(fr.c !== undefined) tgt.c = fr.c;
+  if(fr.h) tgt.h = fr.h;
   const old = tgt.s || [];
   tgt.s = (fr.s || []).map(ns => {
-    const o = old.find(x => (ns.k && x.k === ns.k) || (ns.d && x.d === ns.d) || (ns.h && x.h === ns.h));
-    if(!o) return Object.assign({ n:ns.n, f:[], s:[], z:1 }, ns.d ? { d:ns.d } : {}, ns.h ? { h:ns.h } : {}, ns.k ? { k:ns.k } : {}, ns.p ? { p:ns.p } : {});
+    const o = old.find(x => (ns.d && x.d === ns.d) || (ns.h && x.h === ns.h)) || old.find(x => x.n === ns.n);
+    if(!o) return Object.assign({ n:ns.n, f:[], s:[], z:1 }, ns.d ? { d:ns.d } : {}, ns.h ? { h:ns.h } : {}, ns.p ? { p:ns.p } : {}, ns.c !== undefined ? { c:ns.c } : {});
     if(o.n !== ns.n) renameOpen(ruta.concat(o.n), ruta.concat(ns.n));
-    o.n = ns.n; if(ns.d) o.d = ns.d; if(ns.h) o.h = ns.h; else delete o.h; if(ns.k) o.k = ns.k; else delete o.k; if(ns.p) o.p = ns.p; else delete o.p;
+    o.n = ns.n; if(ns.d) o.d = ns.d; if(ns.h) o.h = ns.h; if(ns.p) o.p = ns.p; else delete o.p; if(ns.c !== undefined) o.c = ns.c;
     return o;
   });
   delete tgt.z; delete tgt.err;
@@ -610,7 +636,7 @@ function paintPackState(r){
   const c = F.c, free = !(Number(c.precio) > 0), mine = miAcceso(c.id), req = miSolicitud(c.id), admin = !!A.token && !mine;
   const on = !!(mine || admin || (r && r.acceso));
   const pubDl = !on && !!(F.tree && F.tree.d && !isDemoId(F.tree.d)) && AJ.descargasCanciones !== false;
-  const libre = !on && !sinPlayer() && (treePlayable() || (!F.tree && libreDe(c) > 0));
+  const libre = !on && !sinPlayer() && (treePlayable() || ((!F.tree || F.big) && libreDe(c) > 0));
   const verbo = sinPlayer() ? "Descarga" : "Reproduce y descarga";
   const st = $("#fState"), buyWord = free ? "Pedir acceso" : "Comprar";
   st.className = "fstate" + (on ? " on" : req ? " req" : libre ? " free" : "");
@@ -642,7 +668,8 @@ function buildGroups(){
     let deep = g.total, hit = files.length, lazy = g.lazy;
     (node.s||[]).forEach(s => { const r = walk(s, ruta.concat(s.n)); deep += r[0]; hit += r[1]; lazy = lazy || r[2]; });
     g.deep = deep; g.hit = hit; g.lazyDeep = lazy;
-    return [deep, hit, lazy];
+    if(node.c !== undefined && node.c >= deep){ g.deep = node.c; g.lazyDeep = false; }   // total que informa el servidor
+    return [g.deep, hit, lazy];
   })(F.tree || { f:[], s:[] }, []);
   return out;
 }
@@ -655,15 +682,23 @@ function toggleGroup(key, force){
   const on = force !== undefined ? force : !F.open.has(key);
   if(on) F.open.add(key); else F.open.delete(key);
   renderTreeKeep();
-  if(on) refreshLevel(key.split("\u0001"));
+  if(on) abrirNivel(key.split("\u0001"));
+}
+async function abrirNivel(ruta){
+  const n = nodeAt(ruta);
+  if(F.big && n && n.z) await refreshLevel(ruta, true, true);
+  refreshLevel(ruta);
 }
 function renderTree(){
   if(!F.tree) return;
+  if(F.big && F.q.trim()) return renderBusqueda();
   const gs = F.groups = buildGroups();
   const total = gs.reduce((t,g)=>t+g.total,0), shown = gs.reduce((t,g)=>t+g.files.length,0), nsub = gs.length - 1, someLazy = gs.some(g => g.lazy);
   const vis = gs.map((g,i) => [g,i]).filter(([g]) => isShown(g));
   F.view = vis.filter(([g]) => isOpen(g)).flatMap(([g]) => g.files);
-  $("#fCount").textContent = total || nsub ? `${F.q ? `${shown} de ${total}` : fmtNum(total)} archivos${nsub?` · ${nsub} subcarpeta${nsub===1?"":"s"}`:""}${someLazy ? " o más" : ""} · ordenado por BPM` : "";
+  const conocido = F.tree.c !== undefined && F.tree.c >= total;
+  $("#fCount").textContent = conocido ? `${fmtNum(F.tree.c)} archivos · ordenado por BPM`
+    : total || nsub ? `${F.q ? `${shown} de ${total}` : fmtNum(total)} archivos${nsub?` · ${nsub} subcarpeta${nsub===1?"":"s"}`:""}${someLazy ? " o más" : ""} · ordenado por BPM` : "";
   const top = (F.tree.s||[]);
   $("#fSubs").innerHTML = top.length > 1 && !F.q ? top.map(s => {
     const g = gs.find(x => x.nivel===1 && x.ruta[0]===s.n);
@@ -681,7 +716,7 @@ function renderTree(){
     if(!g.ruta.length) return g.files.length ? `<div class="rows" data-rows="${i}">${rowsFor(i, g.files)}</div>` : "";
     const open = isOpen(g), name = g.ruta[g.ruta.length-1];
     const link = g.d && !isDemoId(g.d) && AJ.descargasCanciones !== false ? `<a class="ico drive-download-attn" href="${D.folder(g.d)}" target="_blank" rel="noopener" title="Abrir carpeta en Google Drive para descargar todo" aria-label="Abrir ${esc(name)} en Google Drive">${I.open}</a>` : "";
-    const cnt = g.lazy ? (g.err ? "no se pudo leer" : open ? "leyendo…" : "abrir para ver")
+    const cnt = g.lazy && !g.deep ? (g.err ? "no se pudo leer" : open ? "leyendo…" : "abrir para ver")
               : g.deep ? (F.q && g.hit !== g.deep ? `${g.hit} de ${g.deep}` : fmtNum(g.deep)) + ` archivo${g.deep===1?"":"s"}${g.lazyDeep ? " o más" : ""}` : g.lazyDeep ? "abrir para ver" : "vacía";
     const inner = open && g.files.length ? `<div class="rows" data-rows="${i}">${rowsFor(i, g.files)}</div>`
                 : open && g.lazy ? (g.err ? `<div class="empty sm">${esc(g.err)} <button type="button" class="linkbtn" data-relive="${esc(g.key)}">Reintentar</button></div>` : `<div class="rows"><div class="sk row-sk"></div><div class="sk row-sk"></div></div>`) : "";
@@ -702,6 +737,34 @@ function renderTree(){
     }
     if(pending.length) requestAnimationFrame(fill); else refreshRows();
   })();
+}
+/* ---------- Búsqueda en packs grandes (la hace el servidor) ---------- */
+async function buscarGrande(){
+  const q = F.q.trim(), c = F.c, seq = F.req;
+  if(q.length < 2){ F.res = null; renderTree(); return; }
+  F.res = { q, cargando:true }; renderBusqueda();
+  try{
+    const r = await api("buscar", { pack:c.id, q, token:U.token||"", admin:A.token||"" });
+    if(seq !== F.req || F.q.trim() !== q) return;
+    F.res = { q, total:r.total||0, r:r.r||[], pendiente:!!r.pendiente };
+  }catch(ex){ if(seq !== F.req || F.q.trim() !== q) return; F.res = { q, error:ex.message }; }
+  renderBusqueda();
+}
+function renderBusqueda(){
+  const L = $("#fList"), R = F.res, q = F.q.trim();
+  $("#fSubs").innerHTML = "";
+  requestAnimationFrame(() => { const ps = $("#pstick"); if(ps) $(".pack-sheet").style.setProperty("--stick", ps.offsetHeight + "px"); });
+  if(q.length < 2){ L.innerHTML = `<div class="empty">Escribe al menos 2 letras para buscar.</div>`; return; }
+  if(!R || R.q !== q || R.cargando){ $("#fCount").textContent = "Buscando…"; L.innerHTML = Array.from({length:5},()=>`<div class="sk row-sk"></div>`).join(""); return; }
+  if(R.error){ $("#fCount").textContent = ""; L.innerHTML = `<div class="empty">${esc(R.error)}</div>`; return; }
+  if(R.pendiente){ $("#fCount").textContent = ""; L.innerHTML = `<div class="empty">La búsqueda de este pack estará lista en 1 o 2 minutos. Mientras tanto, abre sus carpetas.</div>`; return; }
+  $("#fCount").textContent = `${fmtNum(R.total)} resultado${R.total===1?"":"s"}${R.total > R.r.length ? ` · se muestran ${R.r.length}` : ""} · ordenado por BPM`;
+  if(!R.r.length){ L.innerHTML = `<div class="empty">Ningún archivo coincide con “${esc(q)}”.</div>`; return; }
+  const grupos = new Map();
+  R.r.forEach(x => { const k = x.r.join(" / "); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push({ nombre:x.f[0], k:x.f[1], id:x.f[2]||"", p:Number(x.f[3])||0, bpm:parseBpm(x.f[0]) }); });
+  const lista = [...grupos.entries()].map(([k, files]) => [k, files.sort(byBpm)]);
+  F.view = lista.flatMap(([, files]) => files);
+  L.innerHTML = lista.map(([k, files]) => `<div class="fgroup open busq"><div class="fhead"><div class="fsum">${I.folder}<span class="gname">${esc(k || F.c.nombre)}</span><small>${files.length}</small></div></div><div class="rows">${files.map(fileRow).join("")}</div></div>`).join("");
 }
 function fileRow(f){
   const locked = !f.id, demo = !locked && isDemoId(f.id), on = current && current.id === f.id, playable = (f.k==="v" || f.k==="a") && !sinPlayer();
@@ -887,7 +950,8 @@ function play(f){
   $("#dockS").textContent = [F.c.nombre, f.bpm ? f.bpm.txt + " BPM" : ""].filter(Boolean).join(" · ");
   $("#hudL").textContent = "SEÑAL · EN VIVO"; $("#hudL").className = "live";
   $("#hudR").textContent = (f.bpm ? f.bpm.txt : "—") + " BPM"; $("#hudNow").textContent = "▶ " + f.nombre;
-  const frame = `<iframe src="${D.preview(f.id)}" allow="autoplay; fullscreen" allowfullscreen title="${esc(f.nombre)}"></iframe>`;
+  // Mientras Google Drive prepara el reproductor (los archivos pesados tardan más) se muestra un aviso
+  const frame = `<span class="ldr"><i></i>Cargando desde Google Drive…</span><iframe src="${D.preview(f.id)}" allow="autoplay; fullscreen" allowfullscreen loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>`;
   if(f.k === "v"){
     $("#dockFrame").textContent = "Reproduciendo en la ventana de video";
     $("#vTitle").textContent = f.nombre.replace(/\.[^.]+$/,""); $("#vMeta").textContent = $("#dockS").textContent;
@@ -1187,7 +1251,7 @@ function carForm(c){
         <label class="w2">Tipo (botón de inicio)<select data-f="tipo">${TIPOS.map(([t,l])=>`<option value="${t}" ${t===(c.tipo||"Audio")?"selected":""}>${l}</option>`).join("")}</select></label>
         <label class="w2">Orden<input data-f="orden" type="number" min="1" value="${esc(c.orden || A.cars.length+1)}"></label>
         <label class="tick w2" style="align-self:end;padding-bottom:12px"><input type="checkbox" data-f="visible" ${c.visible!==false?"checked":""}><span>Visible en la web</span></label>
-        <label class="w6">Enlace de la carpeta en Google Drive<input data-f="drive" value="${esc(c.drive ? D.folder(c.drive) : "")}" placeholder="https://drive.google.com/drive/folders/…"><span class="help">Guardar el enlace no cambia permisos de Drive. La sincronización automática está temporalmente pausada; los índices existentes se conservan.</span></label>
+        <label class="w6">Enlace de la carpeta en Google Drive<input data-f="drive" value="${esc(c.drive ? D.folder(c.drive) : "")}" placeholder="https://drive.google.com/drive/folders/…"><span class="help">Guardar el enlace no cambia permisos de Drive. Los cambios de sincronización conservan el último índice válido.</span></label>
         <label class="w6">Visitantes que aún no compran<select data-f="visitantes">${VISIT.map(([v,l])=>`<option value="${v}" ${v===vis?"selected":""}>${l}</option>`).join("")}</select><span class="help" data-vishelp>${esc(VISIT_HELP[vis])}</span></label>
         <label class="w6">Portada (enlace de imagen o de Google Drive)<input id="cPortada" value="${esc(isData ? "Imagen subida desde tu equipo" : E.portada)}" placeholder="https://drive.google.com/file/d/…/view"></label>
       </div>
@@ -1249,7 +1313,7 @@ function fillAjustes(){
   if(J.dirty) return; // no borrar cambios mientras se edita por un refresco automático
   $("#jMail").value = A.aj.correoAvisos || ""; $("#jWa").value = A.aj.whatsapp || ""; $("#jSite").value = A.aj.sitio || "";
   $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false; $("#jDownloadAudio").checked = A.aj.descargasCanciones !== false;
-  const bt = botonesDe(A.aj.botones); $$("[data-boton]").forEach(i => i.checked = bt[i.dataset.boton]);
+  const bt = botonesDe(A.aj.botones); $$("[data-boton]").forEach(i => i.checked = bt[i.dataset.boton]); const bn = nombresBotonesDe(A.aj.nombresBotones); $$(`[data-boton-nombre]`).forEach(i => i.value = bn[i.dataset.botonNombre]);
   $("#jRepro").value = reproDe(A.aj.reproduccion); paintReproHelp();
   J.fondo = A.aj.fondo || ""; paintFondoPrev();
   const tot = Object.values(A.conteos||{}).reduce((t,n)=>t+(Number(n)||0),0);
@@ -1273,7 +1337,7 @@ async function saveAjustes(e){
   try{
     const r = await adminCall("guardarAjustes", { ajustes:{ correoAvisos:$("#jMail").value.trim(), whatsapp:$("#jWa").value, sitio:$("#jSite").value.trim(),
       moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked, descargasCanciones:$("#jDownloadAudio").checked,
-      botones:Object.fromEntries($$("[data-boton]").map(i => [i.dataset.boton, i.checked])), reproduccion:$("#jRepro").value } });
+      botones:Object.fromEntries($$("[data-boton]").map(i => [i.dataset.boton, i.checked])), nombresBotones:Object.fromEntries($$(`[data-boton-nombre]`).map(i => [i.dataset.botonNombre, i.value.trim()])), reproduccion:$("#jRepro").value } });
     A.aj = r.ajustes; J.dirty = false;
     applyCatalog({ carpetas:CARP, ajustes:r.ajustes });
     store.set(CK.cat, { t:Date.now(), v:{ carpetas:CARP, ajustes:r.ajustes } });
@@ -1338,7 +1402,7 @@ async function adminAction(btn){
     } else if(act === "carSave"){
       const v = readPanel(panel);
       const r = await adminCall("guardarCarpeta", { carpeta:{ id, nombre:v.nombre, descripcion:v.descripcion, precio:v.precio, modalidad:v.modalidad, meses:v.meses, tipo:v.tipo, orden:v.orden, visible:v.visible, drive:v.drive, portada:E.portada, visitantes:v.visitantes } });
-      toast((r.indexado ? "Carpeta guardada y contenido actualizado." : r.pendiente ? "Carpeta guardada. La indexación quedó pendiente." : "Carpeta guardada.") + " Los permisos de Drive no se modificaron.", "ok"); A.editCar = null;
+      toast((r.indexado ? "Carpeta guardada y contenido actualizado." : r.pendiente ? "Carpeta guardada. El último índice válido se conserva." : "Carpeta guardada.") + " Los permisos de Drive no se modificaron.", "ok"); A.editCar = null;
       loadCatalog(true); loadIndex(true);
     } else if(act === "carDel"){
       await adminCall("eliminarCarpeta", { id }); A.armed = null; toast("Carpeta quitada de la web. Tu Drive no se tocó.");
@@ -1464,7 +1528,7 @@ function bind(){
     const pk = t.closest("[data-pack]"); if(pk){ const m = t.closest("#mModal"); if(m) closeModal(m); openPack(pk.dataset.pack, true); return; }
     const gp = t.closest("[data-group]"); if(gp){ toggleGroup(gp.dataset.group); return; }
     const jp = t.closest("[data-jump]"); if(jp){
-      const k = jp.dataset.jump; F.open.add(k); renderTree(); refreshLevel(k.split("\u0001"));
+      const k = jp.dataset.jump; F.open.add(k); renderTree(); abrirNivel(k.split("\u0001"));
       const g = F.groups.findIndex(x => x.key === k), el = document.getElementById("fg-" + g);
       if(el) el.scrollIntoView({ behavior:"smooth", block:"start" }); return; }
     const rl = t.closest("[data-relive]"); if(rl){ const ruta = rl.dataset.relive.split("\u0001"), n = nodeAt(ruta); if(n) delete n.err; renderTreeKeep(); refreshLevel(ruta, true); return; }
@@ -1510,7 +1574,7 @@ function bind(){
     if(e.target.matches('[data-carform] select[data-f="modalidad"]')){ e.target.closest("[data-carform]").querySelector("[data-mesbox]").hidden = e.target.value !== "Personalizado"; }
     if(e.target.matches('[data-carform] select[data-f="visitantes"]')){ e.target.closest("[data-carform]").querySelector("[data-vishelp]").textContent = VISIT_HELP[e.target.value] || ""; }
   });
-  let qt; $("#fq").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(() => { F.q = e.target.value; renderTree(); }, 120); });
+  let qt; $("#fq").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(() => { F.q = e.target.value; if(F.big) buscarGrande(); else renderTree(); }, F.big ? 400 : 120); });
   $("#fBuy").addEventListener("click", () => F.c && buy(F.c.id));
   $("#bbBuy").addEventListener("click", () => F.c && buy(F.c.id));
   $("#bSend").addEventListener("click", sendRequest);

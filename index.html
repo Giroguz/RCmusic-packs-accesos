@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=v4c-safe">
+<link rel="stylesheet" href="styles.css?v=v4.2">
 </head>
 <body>
 <div id="bg" aria-hidden="true"><div class="photo" id="bgPhoto" hidden></div><canvas id="bgCanvas"></canvas></div>
@@ -363,6 +363,15 @@
               <label class="tick"><input type="checkbox" data-boton="herramientas"><span>Herramientas DJ</span></label>
               <label class="tick"><input type="checkbox" data-boton="actualizaciones"><span>Actualizaciones</span></label>
             </div>
+            <p class="help">Texto que verán tus clientes en los botones de inicio y en el filtro de packs.</p>
+            <div class="botones-nombres-grid">
+              <label>Todos<input type="text" data-boton-nombre="todos" maxlength="40" placeholder="Todos"></label>
+              <label>Audio<input type="text" data-boton-nombre="audio" maxlength="40" placeholder="Audio"></label>
+              <label>Videos<input type="text" data-boton-nombre="video" maxlength="40" placeholder="Videos"></label>
+              <label>Software<input type="text" data-boton-nombre="software" maxlength="40" placeholder="Software"></label>
+              <label>Herramientas DJ<input type="text" data-boton-nombre="herramientas" maxlength="40" placeholder="Herramientas DJ"></label>
+              <label>Actualizaciones<input type="text" data-boton-nombre="actualizaciones" maxlength="40" placeholder="Actualizaciones"></label>
+            </div>
           </fieldset>
           <label class="w6">Reproducción en la web<select id="jRepro">
               <option value="todos">Activada para todos (visitantes y compradores)</option>
@@ -391,6 +400,6 @@
 
 <input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" hidden>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
-<script src="app.js?v=v4c-safe" defer></script>
+<script src="app.js?v=v4.2" defer></script>
 </body>
 </html>
