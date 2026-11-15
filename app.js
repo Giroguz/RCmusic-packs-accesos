@@ -943,41 +943,39 @@ const PREVIEW_LIMIT_MS = 110000;
 function clearPreviewTimeout(){
   if(previewTimeout){ clearTimeout(previewTimeout); previewTimeout = null; }
 }
-function limitPreviewAfterLoad(iframe, f){
-  if(!iframe || !f || isDemoId(f.id)) return;
-  let armed = false;
-  const arm = () => {
-    if(armed) return;
-    armed = true;
-    clearPreviewTimeout();
-    const playingId = f.id;
-    previewTimeout = setTimeout(() => {
-      if(!current || current.id !== playingId) return;
-      const message = "Muestra finalizada (1:50).";
-      if(current.k === "v"){
-        $("#vFrame").textContent = message;
-        $("#dockFrame").textContent = message;
-      } else {
-        $("#dockFrame").textContent = message;
-      }
-      current = null;
-      previewTimeout = null;
-      $("#disc").classList.remove("spin");
-      document.body.classList.remove("playing");
-      $("#hudL").textContent = "SEÑAL · EN ESPERA"; $("#hudL").className = "";
-      $("#hudR").textContent = "— BPM";
-      $("#hudNow").textContent = "Muestra finalizada (1:50)";
-      refreshRows();
-      toast("Fin de la muestra de 1 minuto y 50 segundos.");
-    }, PREVIEW_LIMIT_MS);
-  };
-  iframe.addEventListener("load", arm, { once:true });
+function startPreviewLimit(f){
+  if(!f || isDemoId(f.id) || (f.k !== "a" && f.k !== "v")) return;
+  clearPreviewTimeout();
+  const playingId = f.id;
+  previewTimeout = setTimeout(() => {
+    if(!current || current.id !== playingId) return;
+    const message = "Muestra finalizada (1:50).";
+    // Quitar el iframe detiene también el reproductor que vive dentro de Drive.
+    $("#dockFrame").replaceChildren();
+    $("#vFrame").replaceChildren();
+    if(current.k === "v"){
+      $("#vFrame").textContent = message;
+      $("#dockFrame").textContent = message;
+    } else {
+      $("#dockFrame").textContent = message;
+    }
+    current = null;
+    previewTimeout = null;
+    $("#disc").classList.remove("spin");
+    document.body.classList.remove("playing");
+    $("#hudL").textContent = "SEÑAL · EN ESPERA"; $("#hudL").className = "";
+    $("#hudR").textContent = "— BPM";
+    $("#hudNow").textContent = message;
+    refreshRows();
+    toast("Fin de la muestra de 1 minuto y 50 segundos.");
+  }, PREVIEW_LIMIT_MS);
 }
 function play(f){
   if(sinPlayer()) return;
   if(current && current.id === f.id && f.k === "a"){ stop(); return; }
   clearPreviewTimeout();
   const demo = isDemoId(f.id);
+  startPreviewLimit(f);
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => x.id && (x.k==="v" || x.k==="a"));
   document.body.classList.add("playing"); $("#dock").classList.add("on"); $("#disc").classList.add("spin");
@@ -994,10 +992,8 @@ function play(f){
     [["#vOpen",D.view,canView(f)],["#vDl",D.dl,canDl(f)]].forEach(([s,fn,ok]) => { const a = $(s); a.hidden = !ok; if(demo){ a.href="#"; a.dataset.demo="1"; } else { a.href=fn(f.id); delete a.dataset.demo; } });
     $("#vNote").hidden = canDl(f) || AJ.descargasCanciones === false;
     openModal("#vModal");
-    limitPreviewAfterLoad($("#vFrame iframe"), f);
   } else {
     $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
-    limitPreviewAfterLoad($("#dockFrame iframe"), f);
   }
   refreshRows();
 }
