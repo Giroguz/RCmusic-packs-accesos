@@ -59,6 +59,10 @@ const D = {
   folder:  id => `https://drive.google.com/drive/folders/${id}${au("?")}`,
   thumb:   (id, w) => `https://drive.google.com/thumbnail?id=${id}&sz=w${w||400}`
 };
+// Muestras publicadas (audio recortado). Las pistas no incluidas siguen con el reproductor habitual.
+const AUDIO_SAMPLES = {
+  "1p51LRAApozYpBMBntDAxqtOSP3aWmv8q": "son-de-amores-1m50.mp3"
+};
 const waLink = (num, txt) => `https://wa.me/${String(num).replace(/\D/g,"")}${txt ? "?text="+encodeURIComponent(txt) : ""}`;
 function coverUrl(v){
   v = String(v || "").trim();
@@ -959,7 +963,19 @@ function play(f){
     [["#vOpen",D.view,canView(f)],["#vDl",D.dl,canDl(f)]].forEach(([s,fn,ok]) => { const a = $(s); a.hidden = !ok; if(demo){ a.href="#"; a.dataset.demo="1"; } else { a.href=fn(f.id); delete a.dataset.demo; } });
     $("#vNote").hidden = canDl(f) || AJ.descargasCanciones === false;
     openModal("#vModal");
-  } else $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
+  } else {
+    const sample = AUDIO_SAMPLES[f.id];
+    if(demo) $("#dockFrame").textContent = "Ejemplo · sin archivo conectado";
+    else if(sample){
+      const audio = document.createElement("audio");
+      audio.controls = true; audio.autoplay = true; audio.preload = "metadata";
+      audio.style.cssText = "width:100%;height:42px";
+      audio.setAttribute("aria-label", "Muestra de 1 minuto y 50 segundos");
+      audio.src = sample;
+      $("#dockFrame").replaceChildren(audio);
+      audio.play().catch(() => {});
+    } else $("#dockFrame").innerHTML = frame;
+  }
   refreshRows();
 }
 function stop(){
