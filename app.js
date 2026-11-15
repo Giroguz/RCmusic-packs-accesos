@@ -938,10 +938,45 @@ function logoutUser(silent){
 /* =====================================================================
    Reproducción
    ===================================================================== */
-let current = null, queue = [];
+let current = null, queue = [], previewTimeout = null;
+const PREVIEW_LIMIT_MS = 110000;
+function clearPreviewTimeout(){
+  if(previewTimeout){ clearTimeout(previewTimeout); previewTimeout = null; }
+}
+function limitPreviewAfterLoad(iframe, f){
+  if(!iframe || !f || isDemoId(f.id)) return;
+  let armed = false;
+  const arm = () => {
+    if(armed) return;
+    armed = true;
+    clearPreviewTimeout();
+    const playingId = f.id;
+    previewTimeout = setTimeout(() => {
+      if(!current || current.id !== playingId) return;
+      const message = "Muestra finalizada (1:50).";
+      if(current.k === "v"){
+        $("#vFrame").textContent = message;
+        $("#dockFrame").textContent = message;
+      } else {
+        $("#dockFrame").textContent = message;
+      }
+      current = null;
+      previewTimeout = null;
+      $("#disc").classList.remove("spin");
+      document.body.classList.remove("playing");
+      $("#hudL").textContent = "SEÑAL · EN ESPERA"; $("#hudL").className = "";
+      $("#hudR").textContent = "— BPM";
+      $("#hudNow").textContent = "Muestra finalizada (1:50)";
+      refreshRows();
+      toast("Fin de la muestra de 1 minuto y 50 segundos.");
+    }, PREVIEW_LIMIT_MS);
+  };
+  iframe.addEventListener("load", arm, { once:true });
+}
 function play(f){
   if(sinPlayer()) return;
   if(current && current.id === f.id && f.k === "a"){ stop(); return; }
+  clearPreviewTimeout();
   const demo = isDemoId(f.id);
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => x.id && (x.k==="v" || x.k==="a"));
@@ -959,10 +994,15 @@ function play(f){
     [["#vOpen",D.view,canView(f)],["#vDl",D.dl,canDl(f)]].forEach(([s,fn,ok]) => { const a = $(s); a.hidden = !ok; if(demo){ a.href="#"; a.dataset.demo="1"; } else { a.href=fn(f.id); delete a.dataset.demo; } });
     $("#vNote").hidden = canDl(f) || AJ.descargasCanciones === false;
     openModal("#vModal");
-  } else $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
+    limitPreviewAfterLoad($("#vFrame iframe"), f);
+  } else {
+    $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
+    limitPreviewAfterLoad($("#dockFrame iframe"), f);
+  }
   refreshRows();
 }
 function stop(){
+  clearPreviewTimeout();
   current = null;
   document.body.classList.remove("playing"); $("#dock").classList.remove("on"); $("#disc").classList.remove("spin");
   setTimeout(() => { if(!current) $("#dockFrame").innerHTML = ""; }, 400);
