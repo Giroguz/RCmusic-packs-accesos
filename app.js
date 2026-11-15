@@ -486,8 +486,8 @@ function renderPacks(){
                 : lib===2 ? `<span class="badge-st free">Escucha y descarga libre</span>` : lib===1 ? `<span class="badge-st free">Escucha libre</span>` : "";
     const foot = st==="own" ? `<button type="button" class="btn grad sm" data-pack="${esc(c.id)}">${sinPlayer() ? "Abrir" : "Abrir y reproducir"}</button>`
                : `<button type="button" class="btn light sm" data-pack="${esc(c.id)}">${lib ? (/video/i.test(c.tipo) ? "Ver y reproducir" : "Escuchar") : "Ver contenido"}</button>` +
-                 (st==="req" ? `<button type="button" class="btn sm done" disabled>Solicitado</button>`
-                             : `<button type="button" class="btn sm" data-buy="${esc(c.id)}">${free?"Pedir acceso":"Comprar"}</button>`);
+                 (free ? "" : st==="req" ? `<button type="button" class="btn sm done" disabled>Solicitado</button>`
+                             : `<button type="button" class="btn sm" data-buy="${esc(c.id)}">Comprar</button>`);
     return `<article class="pack" data-prefetch="${esc(c.id)}">
       <button type="button" class="cbtn" data-pack="${esc(c.id)}" aria-label="Ver contenido de ${esc(c.nombre)}">
         ${coverHtml(c)}${badge}
@@ -526,8 +526,8 @@ async function openPack(id, push){
     $(a).textContent = free ? "Gratis" : money(c.precio); $(a).className = "amt" + (free ? " free" : "");
     $(p).textContent = perLabel(c); $(p).className = perClass(c);
   });
-  $("#fPriceNote").textContent = free ? "Gratis con tu cuenta" : durTxt(c) + (mesesDe(c) ? " · renovable" : "");
-  $("#bbNote").textContent = free ? "Con tu cuenta" : durTxt(c);
+  $("#fPriceNote").textContent = free ? "Pack gratuito" : durTxt(c) + (mesesDe(c) ? " · renovable" : "");
+  $("#bbNote").textContent = free ? "Pack gratuito" : durTxt(c);
   paintPackState();
   if(push){ try{ history.pushState({__rcModal:"fModal",__rcPrevUrl:location.href},"","#pack-"+slug(c.nombre)); }catch(_){} }
   openModal("#fModal");
@@ -642,6 +642,9 @@ function paintPackState(r){
   st.className = "fstate" + (on ? " on" : req ? " req" : libre ? " free" : "");
   if(admin) st.innerHTML = `<b>Vista de administrador.</b> Ves${sinPlayer() ? "" : ", reproduces"} y descargas todo el contenido.${sinPlayer() ? " La reproducción está desactivada en Ajustes." : ""}`;
   else if(on){ const h = (mine && mine.hasta) || (r && r.hasta); st.innerHTML = `<b>Tienes acceso</b>${h ? ` hasta el ${esc(fechaCorta(h))} (${Math.max(0,dias(h))} días)` : " sin vencimiento"}. ${verbo} todo. Para descargar desde Drive, tu navegador debe tener abierta la cuenta de Google ${esc(U.cuenta ? U.cuenta.correo : "aprobada")}.`; }
+  else if(free && libre && (pubDl || libreDe(c) === 2)) st.innerHTML = `<b>Pack gratuito.</b> Puedes reproducir y descargar el contenido disponible.`;
+  else if(free && libre) st.innerHTML = `<b>Pack gratuito.</b> Puedes reproducir el contenido disponible. Las descargas dependen de la configuración del administrador.`;
+  else if(free) st.innerHTML = `<b>Pack gratuito.</b> El acceso a la reproducción y descarga depende de la configuración del administrador y de los permisos de Google Drive.`;
   else if(req) st.innerHTML = `<b>Solicitud enviada.</b> El administrador ya recibió tu pedido y te escribirá por WhatsApp para activarlo.${libre ? " Mientras tanto, puedes reproducir el contenido." : ""}`;
   else if(libre && (pubDl || libreDe(c) === 2)) st.innerHTML = `<b>Escucha y descarga libre.</b> Este pack está abierto: reproduce y descarga sin comprar.`;
   else if(libre) st.innerHTML = `<b>Escucha libre.</b> Reproduce todo el contenido sin comprar. Para <b>descargar</b>, pulsa <b>${buyWord}</b>.`;
@@ -649,10 +652,10 @@ function paintPackState(r){
   else st.innerHTML = `Vista previa de la lista. Pulsa <b>${buyWord}</b>: te registras en un minuto y el administrador te contacta por WhatsApp.`;
   const label = on ? "" : req ? "Solicitud enviada" : buyWord;
   [["#fBuy","grad lg"],["#bbBuy","grad"]].forEach(([s,cls]) => {
-    const b = $(s); b.hidden = on; b.textContent = label; b.disabled = !!req;
+    const b = $(s); b.hidden = on || free; b.textContent = label; b.disabled = !!req;
     b.className = "btn " + (req ? "done" : cls) + (s === "#fBuy" ? " lg" : "");
   });
-  $("#buybar").hidden = on;
+  $("#buybar").hidden = on || free;
   const drive = on ? ((F.own && F.tree && F.tree.d && !isDemoId(F.tree.d)) ? D.folder(F.tree.d) : ((r && r.drive) || F.drive)) : pubDl ? D.folder(F.tree.d) : "";
   $("#fDrive").hidden = !drive; $("#fDrive").classList.toggle("drive-download-attn", !!drive); if(drive) $("#fDrive").href = drive;
 }
@@ -788,6 +791,7 @@ function fileRow(f){
 let PEND = null;   // acción pendiente después de ingresar (comprar un pack)
 async function buy(id){
   const c = CARP.find(x=>String(x.id)===String(id)); if(!c) return;
+  if(!(Number(c.precio) > 0)){ openPack(c.id, true); return; }
   if(U.token && !U.cuenta) await loadCuenta();
   if(!U.cuenta){ PEND = { buy:c.id }; openSection("registro"); return; }
   if(miAcceso(c.id)){ toast("Ya tienes acceso a este pack.", "ok"); openPack(c.id, true); return; }
