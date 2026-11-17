@@ -1003,8 +1003,9 @@ function play(f){
   $("#hudL").textContent = "SEÑAL · EN VIVO"; $("#hudL").className = "live";
   $("#hudR").textContent = (f.bpm ? f.bpm.txt : "—") + " BPM"; $("#hudNow").textContent = "▶ " + f.nombre;
   startPreviewLimit(f);
-  // Mientras Google Drive prepara el reproductor (los archivos pesados tardan más) se muestra un aviso
-  const frame = `<span class="ldr"><i></i>Cargando desde Google Drive…</span><iframe src="${D.preview(f.id)}" allow="autoplay; fullscreen" allowfullscreen loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>`;
+  // Mientras Google Drive prepara el reproductor (los archivos pesados tardan más) se muestra un aviso.
+  // Sin permiso de descarga, una capa tapa el botón de Drive que abre el archivo en otra ventana (desde ahí se descarga).
+  const frame = `<span class="ldr"><i></i>Cargando desde Google Drive…</span><iframe src="${D.preview(f.id)}" allow="autoplay; fullscreen" allowfullscreen loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>${canDl(f) ? "" : `<span class="nodl" title="La descarga es para quienes tienen acceso al pack"></span>`}`;
   if(f.k === "v"){
     $("#dockFrame").textContent = "Reproduciendo en la ventana de video";
     $("#vTitle").textContent = f.nombre.replace(/\.[^.]+$/,""); $("#vMeta").textContent = $("#dockS").textContent;
@@ -1018,10 +1019,32 @@ function play(f){
   refreshRows();
 }
 // Audio privado: el servidor entrega solo el comienzo del archivo y suena aquí mismo, 1 min 50 s como máximo
-let muestraURL = "", muestraSeq = 0;
+// El audio no se muestra con los controles del navegador (esos traen "Descargar"): se usa un reproductor propio
+// con reproducir/pausar, tiempo y barra, limitado a 1 min 50 s, sin menú ni clic derecho.
+let muestraURL = "", muestraSeq = 0, muestraAudio = null;
 function pararMuestra(){
-  const a = $("#dockFrame audio"); if(a){ try{ a.pause(); }catch(_){} a.removeAttribute("src"); }
+  if(muestraAudio){ try{ muestraAudio.pause(); }catch(_){} muestraAudio.removeAttribute("src"); try{ muestraAudio.load(); }catch(_){} muestraAudio = null; }
   if(muestraURL){ URL.revokeObjectURL(muestraURL); muestraURL = ""; }
+}
+function reproductorPropio(a){
+  const lim = PREVIEW_LIMIT_MS / 1000, box = document.createElement("div");
+  box.className = "mplay";
+  box.innerHTML = `<button type="button" class="mp-btn" aria-label="Pausar">${I.pause}</button><span class="mp-t">0:00</span>` +
+    `<input type="range" class="mp-bar" min="0" max="${lim}" step="0.1" value="0" aria-label="Posición de la vista previa"><span class="mp-d">${mmss(lim * 1000)}</span>`;
+  const btn = box.querySelector(".mp-btn"), bar = box.querySelector(".mp-bar"), t = box.querySelector(".mp-t"), dur = box.querySelector(".mp-d");
+  const tope = () => Math.min(lim, isFinite(a.duration) && a.duration > 0 ? a.duration : lim);
+  const pinta = () => { btn.innerHTML = a.paused ? I.play : I.pause; btn.setAttribute("aria-label", a.paused ? "Reproducir" : "Pausar"); };
+  btn.addEventListener("click", () => { if(a.paused){ if(a.currentTime >= tope() - 0.2) a.currentTime = 0; a.play().catch(() => {}); } else a.pause(); });
+  bar.addEventListener("input", () => { a.currentTime = Math.min(Number(bar.value), tope() - 0.1); });
+  a.addEventListener("loadedmetadata", () => { bar.max = tope(); dur.textContent = mmss(tope() * 1000); });
+  a.addEventListener("timeupdate", () => {
+    if(a.currentTime >= lim){ a.pause(); a.currentTime = 0; }
+    if(document.activeElement !== bar) bar.value = a.currentTime;
+    t.textContent = mmss(a.currentTime * 1000);
+  });
+  ["play","pause","ended"].forEach(ev => a.addEventListener(ev, pinta));
+  box.addEventListener("contextmenu", e => e.preventDefault());
+  return box;
 }
 async function playMuestra(f){
   const seq = ++muestraSeq, c = F.c;
@@ -1041,10 +1064,9 @@ async function playMuestra(f){
   for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   pararMuestra();
   muestraURL = URL.createObjectURL(new Blob([bytes], { type:r.mime || "audio/mpeg" }));
-  const a = document.createElement("audio");
-  a.controls = true; a.autoplay = true; a.preload = "auto"; a.src = muestraURL; a.className = "muestra";
-  a.addEventListener("timeupdate", () => { if(a.currentTime >= PREVIEW_LIMIT_MS / 1000){ a.pause(); a.currentTime = 0; } });
-  $("#dockFrame").replaceChildren(a);
+  const a = muestraAudio = new Audio();
+  a.preload = "auto"; a.src = muestraURL;
+  $("#dockFrame").replaceChildren(reproductorPropio(a));
   try{ await a.play(); }catch(_){}
   startPreviewLimit(f);
 }

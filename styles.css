@@ -694,3 +694,14 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 
 /* v4.4 · vista previa de audios privados (suena en la web, 1 min 50 s) */
 #dockFrame audio.muestra{position:relative;z-index:1;display:block;width:100%;height:42px;color-scheme:dark}
+
+/* v4.4 · reproductor propio de la vista previa (sin opción "Descargar" del navegador) */
+.mplay{position:relative;z-index:1;display:flex;align-items:center;gap:10px;width:100%;height:100%;padding:0 12px;user-select:none;-webkit-user-select:none}
+.mplay .mp-btn{width:36px;height:36px;flex:none;border-radius:50%;border:0;display:grid;place-items:center;background:var(--grad);color:#fff;cursor:pointer}
+.mplay .mp-btn svg{width:15px;height:15px}
+.mplay .mp-t,.mplay .mp-d{font:12px var(--f-mono);color:var(--mute);min-width:34px;text-align:center}
+.mplay .mp-bar{flex:1;min-width:60px;accent-color:var(--cyan);height:4px;cursor:pointer}
+/* Capa que tapa el botón "abrir en otra ventana" de Google Drive cuando no hay permiso de descarga */
+.nodl{position:absolute;top:0;right:0;width:68px;height:64px;z-index:3;background:transparent;cursor:not-allowed}
+#vFrame .nodl{width:84px;height:72px}
+.mplay .mp-btn svg path{fill:#fff;stroke:none}
