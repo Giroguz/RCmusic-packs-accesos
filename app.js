@@ -71,9 +71,9 @@ function coverUrl(v){
 /* ---------- Formatos ---------- */
 const BOTONES_DEF = { todos:true, audio:true, video:true, software:true, herramientas:true, actualizaciones:true };
 const BOTONES_NOMBRES_DEF = { todos:"Todos", audio:"Audio", video:"Videos", software:"Software", herramientas:"Herramientas DJ", actualizaciones:"Actualizaciones" };
-let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true, botones:{ ...BOTONES_DEF }, nombresBotones:{ ...BOTONES_NOMBRES_DEF }, reproduccion:"nadie" };
+let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true, botones:{ ...BOTONES_DEF }, nombresBotones:{ ...BOTONES_NOMBRES_DEF }, reproduccion:"todos" };
 // Reproducción en la web (Ajustes): todos · compradores · nadie
-const reproDe = r => ["todos","compradores","nadie"].includes(r) ? r : "nadie";
+const reproDe = r => ["todos","compradores","nadie"].includes(r) ? r : "todos";
 const sinPlayer = () => AJ.reproduccion === "nadie";
 const botonesDe = b => Object.fromEntries(Object.keys(BOTONES_DEF).map(k => [k, !(b && b[k] === false)]));
 const nombresBotonesDe = b => Object.fromEntries(Object.keys(BOTONES_NOMBRES_DEF).map(k => [k, String((b||{})[k] || BOTONES_NOMBRES_DEF[k]).trim().slice(0,40) || BOTONES_NOMBRES_DEF[k]]));
@@ -642,13 +642,13 @@ function paintPackState(r){
   const st = $("#fState"), buyWord = free ? "Pedir acceso" : "Comprar";
   st.className = "fstate" + (on ? " on" : req ? " req" : libre ? " free" : "");
   if(admin) st.innerHTML = `<b>Vista de administrador.</b> Ves${sinPlayer() ? "" : ", reproduces"} y descargas todo el contenido.${sinPlayer() ? " La reproducción está desactivada en Ajustes." : ""}`;
-  else if(on){ const h = (mine && mine.hasta) || (r && r.hasta); st.innerHTML = `<b>Tienes acceso</b>${h ? ` hasta el ${esc(fechaCorta(h))} (${Math.max(0,dias(h))} días)` : " sin vencimiento"}. ${verbo} todo. Para descargar desde Drive, tu navegador debe tener abierta la cuenta de Google ${esc(U.cuenta ? U.cuenta.correo : "aprobada")}.`; }
+  else if(on){ const h = (mine && mine.hasta) || (r && r.hasta); st.innerHTML = `<b>Tienes acceso</b>${h ? ` hasta el ${esc(fechaCorta(h))} (${Math.max(0,dias(h))} días)` : " sin vencimiento"}. ${sinPlayer() ? "Descarga" : "Reproduce (1 min 50 s por pista) y descarga"} todo. Para descargar desde Drive, tu navegador debe tener abierta la cuenta de Google ${esc(U.cuenta ? U.cuenta.correo : "aprobada")}.`; }
   else if(free && libre && (pubDl || libreDe(c) === 2)) st.innerHTML = `<b>Pack gratuito.</b> Puedes reproducir y descargar el contenido disponible.`;
-  else if(free && libre) st.innerHTML = `<b>Pack gratuito.</b> Puedes reproducir el contenido disponible. Las descargas dependen de la configuración del administrador.`;
+  else if(free && libre) st.innerHTML = `<b>Pack gratuito.</b> Reproduce 1 min 50 s de cada pista. Para descargar necesitas que el administrador te dé acceso.`;
   else if(free) st.innerHTML = `<b>Pack gratuito.</b> El acceso a la reproducción y descarga depende de la configuración del administrador y de los permisos de Google Drive.`;
   else if(req) st.innerHTML = `<b>Solicitud enviada.</b> El administrador ya recibió tu pedido y te escribirá por WhatsApp para activarlo.${libre ? " Mientras tanto, puedes reproducir el contenido." : ""}`;
   else if(libre && (pubDl || libreDe(c) === 2)) st.innerHTML = `<b>Escucha y descarga libre.</b> Este pack está abierto: reproduce y descarga sin comprar.`;
-  else if(libre) st.innerHTML = `<b>Escucha libre.</b> Reproduce todo el contenido sin comprar. Para <b>descargar</b>, pulsa <b>${buyWord}</b>.`;
+  else if(libre) st.innerHTML = `<b>Escucha libre.</b> Reproduce 1 min 50 s de cada pista sin comprar. Para <b>descargar</b>, pulsa <b>${buyWord}</b>.`;
   else if(U.cuenta) st.innerHTML = `Puedes ver la lista completa. Para ${sinPlayer() ? "descargar" : "reproducir y descargar"}, pulsa <b>${buyWord}</b>.`;
   else st.innerHTML = `Vista previa de la lista. Pulsa <b>${buyWord}</b>: te registras en un minuto y el administrador te contacta por WhatsApp.`;
   const label = on ? "" : req ? "Solicitud enviada" : buyWord;
@@ -943,18 +943,26 @@ function logoutUser(silent){
 /* =====================================================================
    Reproducción
    ===================================================================== */
-let current = null, queue = [], previewTimeout = null;
-const PREVIEW_LIMIT_MS = 120000;
+let current = null, queue = [], previewTimeout = null, previewTick = null;
+// Toda reproducción dura como máximo 1 min 50 s (110 s) desde el clic, para todo el público.
+const PREVIEW_LIMIT_MS = 110000;
+const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 function clearPreviewTimeout(){
   if(previewTimeout){ clearTimeout(previewTimeout); previewTimeout = null; }
+  if(previewTick){ clearInterval(previewTick); previewTick = null; }
+  $$("[data-preview-cd]").forEach(cd => { cd.hidden = true; });
 }
 function startPreviewLimit(f){
   if(!f || isDemoId(f.id) || (f.k !== "a" && f.k !== "v")) return;
   clearPreviewTimeout();
-  const playingId = f.id;
+  const playingId = f.id, fin = Date.now() + PREVIEW_LIMIT_MS;
+  const pinta = () => $$("[data-preview-cd]").forEach(cd => { cd.hidden = false; cd.textContent = "Vista previa · " + mmss(fin - Date.now()); });
+  pinta(); previewTick = setInterval(pinta, 1000);
   previewTimeout = setTimeout(() => {
+    if(previewTick){ clearInterval(previewTick); previewTick = null; }
+    $$("[data-preview-cd]").forEach(cd => { cd.hidden = true; });
     if(!current || current.id !== playingId) return;
-    const message = "Tiempo de prueba finalizado (2 minutos desde el clic).";
+    const message = "Vista previa terminada (1 min 50 s). Pulsa ▶ para escucharla otra vez.";
     // Quitar el iframe detiene también el reproductor que vive dentro de Drive.
     $("#dockFrame").replaceChildren();
     $("#vFrame").replaceChildren();
@@ -972,7 +980,7 @@ function startPreviewLimit(f){
     $("#hudR").textContent = "— BPM";
     $("#hudNow").textContent = message;
     refreshRows();
-    toast("Tiempo de prueba de 2 minutos agotado.");
+    toast("Vista previa de 1 min 50 s terminada.");
   }, PREVIEW_LIMIT_MS);
 }
 function play(f){
@@ -980,7 +988,6 @@ function play(f){
   if(current && current.id === f.id && f.k === "a"){ stop(); return; }
   clearPreviewTimeout();
   const demo = isDemoId(f.id);
-  startPreviewLimit(f);
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => x.id && (x.k==="v" || x.k==="a"));
   document.body.classList.add("playing"); $("#dock").classList.add("on"); $("#disc").classList.add("spin");
@@ -988,6 +995,7 @@ function play(f){
   $("#dockS").textContent = [F.c.nombre, f.bpm ? f.bpm.txt + " BPM" : ""].filter(Boolean).join(" · ");
   $("#hudL").textContent = "SEÑAL · EN VIVO"; $("#hudL").className = "live";
   $("#hudR").textContent = (f.bpm ? f.bpm.txt : "—") + " BPM"; $("#hudNow").textContent = "▶ " + f.nombre;
+  startPreviewLimit(f);
   // Mientras Google Drive prepara el reproductor (los archivos pesados tardan más) se muestra un aviso
   const frame = `<span class="ldr"><i></i>Cargando desde Google Drive…</span><iframe src="${D.preview(f.id)}" allow="autoplay; fullscreen" allowfullscreen loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>`;
   if(f.k === "v"){
@@ -1267,17 +1275,16 @@ function readPanel(el){ const o = {}; el.querySelectorAll("[data-f]").forEach(i 
 const E = { portada:"" };
 let FILE_TARGET = "portada";
 const TIPOS = [["Audio","Audio"],["Video","Video"],["Mixto","Mixto (audio y video)"],["Software","Software"],["Herramientas","Herramientas DJ"],["Actualizaciones","Actualizaciones"]];
-const VISIT = [["reproducir","Reproducen todo · descargan solo los que compran"],["publica","Reproducen y descargan todo (carpeta pública)"],["privada","Solo ven la lista (carpeta privada)"],["auto","Automático: según cómo está compartida en Drive"]];
+const VISIT = [["auto","Según los permisos de Google Drive"],["privada","Solo ven la lista"]];
+const visDe = v => v === "privada" ? "privada" : "auto";
 const VISIT_HELP = {
-  reproducir:"No modifica permisos de Drive. En la versión segura actual, visitantes solo ven nombres; el reproductor público permanece desactivado hasta una verificación adicional.",
-  publica:"No modifica permisos de Drive. En la versión segura actual, visitantes solo ven nombres; el acceso público no se habilita.",
-  privada:"No modifica permisos de Drive. Visitantes solo ven nombres; los compradores autorizados acceden a su contenido.",
-  auto:"No se cambia nada en Drive. Con la reproducción general desactivada, los visitantes solo ven la lista; el acceso de compradores autorizados se mantiene."
+  auto:"No se cambia nada en Drive. Si la carpeta o el archivo está como “Cualquier persona con el enlace”, todo el público lo reproduce (1 min 50 s). Si es privado, los visitantes solo ven la lista. Descargan solo quienes aprobaste y quienes compartiste como lector en Drive.",
+  privada:"Los visitantes solo ven la lista, aunque la carpeta esté abierta en Drive. Quienes aprobaste o compartiste como lector en Drive reproducen y descargan. No se cambia nada en Drive."
 };
-const VISIT_PILL = { reproducir:["Escucha libre","si"], publica:["Pública","si"], privada:["Privada","no"], auto:["Según Drive",""] };
+const VISIT_PILL = { privada:["Solo lista","no"], auto:["Según Drive",""] };
 function carForm(c){
   E.portada = c.portada || "";
-  const isData = /^data:/.test(E.portada), mod = c.modalidad || "Único", vis = c.visitantes || "auto";
+  const isData = /^data:/.test(E.portada), mod = c.modalidad || "Único", vis = visDe(c.visitantes);
   return `<div class="panel" data-carform="${esc(c.id||"")}" style="margin-bottom:16px">
     <span class="lbl">${c.id ? "Editar carpeta" : "Nueva carpeta"}</span>
     <div class="cedit">
@@ -1307,7 +1314,7 @@ function renderCars(){
     const id = esc(c.id), n = A.conteos[c.id];
     return `<div class="crow">${coverHtml(c, true)}
       <div class="cn"><b>${esc(c.nombre)}</b><span>${esc(c.tipo || "")} · ${esc(c.drive ? (c.descripcion || "Carpeta de Drive conectada") : "Falta conectar la carpeta de Drive")}</span>
-        <span class="vis-row"><span class="pill ${VISIT_PILL[c.visitantes||"auto"][1]}">${VISIT_PILL[c.visitantes||"auto"][0]}</span>${c.publica ? `<span class="dim">En Drive: cualquier persona con el enlace</span>` : c.drive ? `<span class="dim">En Drive: privada</span>` : ""}</span></div>
+        <span class="vis-row"><span class="pill ${VISIT_PILL[visDe(c.visitantes)][1]}">${VISIT_PILL[visDe(c.visitantes)][0]}</span>${c.publica ? `<span class="dim">En Drive: cualquier persona con el enlace</span>` : c.drive ? `<span class="dim">En Drive: privada</span>` : ""}</span></div>
       <span class="num c-tipo">${n != null ? fmtNum(n) : "—"}</span>
       <span class="num c-precio" style="color:var(--ink)">${esc(money(c.precio))}<br><span class="dim">${esc(Number(c.precio)>0 ? periodo(c) : "")}</span></span>
       <span class="c-vis"><span class="pill ${c.visible!==false?"si":"no"}">${c.visible!==false?"Visible":"Oculta"}</span></span>
@@ -1358,13 +1365,13 @@ function fillAjustes(){
   $("#jRepro").value = reproDe(A.aj.reproduccion); paintReproHelp();
   J.fondo = A.aj.fondo || ""; paintFondoPrev();
   const tot = Object.values(A.conteos||{}).reduce((t,n)=>t+(Number(n)||0),0);
-  $("#jIdx").textContent = A.indexado ? `${fmtNum(tot)} archivos en el último índice. La sincronización automática y la reconstrucción manual están pausadas para proteger los índices existentes.` : "La sincronización está pausada para proteger los índices existentes.";
+  $("#jIdx").textContent = A.indexado ? `${fmtNum(tot)} archivos en el último índice. Los cambios de Drive (archivos y permisos) se revisan cada 10 minutos; las carpetas que se abren en la web se leen de Drive en el momento.` : "Aún no hay índice: se prepara solo en los próximos minutos.";
   $("#jQuota").textContent = A.cuota != null ? `Correos disponibles hoy en tu cuenta de Google: ${A.cuota}.` : "";
 }
 const REPRO_HELP = {
-  todos:"La reproducción pública está temporalmente desactivada en la versión segura. Los visitantes solo ven nombres; no se cambian permisos de Drive.",
-  compradores:"La reproducción está temporalmente desactivada. Visitantes solo ven nombres; no se cambian permisos de Drive.",
-  nadie:"El reproductor web está desactivado. No se cambian permisos de Drive."
+  todos:"El público reproduce lo que Drive deja ver (1 min 50 s por pista). Quienes tienen acceso también descargan. No se cambian permisos de Drive.",
+  compradores:"Solo reproducen (1 min 50 s) quienes aprobaste o compartiste como lector en Drive. Los visitantes ven la lista de nombres.",
+  nadie:"Se quita el reproductor de la web para todos. Quienes tienen acceso siguen descargando. No se cambian permisos de Drive."
 };
 function paintReproHelp(){ $("#jReproHelp").textContent = REPRO_HELP[$("#jRepro").value] || ""; }
 function paintFondoPrev(){

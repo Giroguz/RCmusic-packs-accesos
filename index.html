@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=v4.2">
+<link rel="stylesheet" href="styles.css?v=v4.3">
 </head>
 <body>
 <div id="bg" aria-hidden="true"><div class="photo" id="bgPhoto" hidden></div><canvas id="bgCanvas"></canvas></div>
@@ -125,7 +125,7 @@
     <button type="button" id="prev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
     <button type="button" id="next" aria-label="Siguiente"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
   </div>
-  <div class="meta"><div class="t" id="dockT"></div><div class="s"><span class="eq"><i></i><i></i><i></i><i></i></span><span id="dockS"></span></div></div>
+  <div class="meta"><div class="t" id="dockT"></div><div class="s"><span class="eq"><i></i><i></i><i></i><i></i></span><span id="dockS"></span></div><div class="preview-cd" data-preview-cd hidden></div></div>
   <div class="frame" id="dockFrame"></div>
   <button type="button" class="x" id="dockStop" aria-label="Cerrar reproductor"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
 </div>
@@ -394,12 +394,12 @@
   <div class="sheet video-sheet">
     <header class="shead"><h3 id="vTitle">Video</h3><button type="button" class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
     <div class="video" id="vFrame"></div>
-    <div class="row-split pad"><span class="num" id="vMeta"></span><div class="row-end"><span class="note" id="vNote" hidden>La descarga es para quienes compran el pack.</span><a class="btn" id="vOpen" href="#" target="_blank" rel="noopener">Abrir en Drive</a><a class="btn light" id="vDl" href="#" target="_blank" rel="noopener">Descargar</a></div></div>
+    <div class="row-split pad"><span class="num" id="vMeta"></span><span class="preview-cd" data-preview-cd hidden></span><div class="row-end"><span class="note" id="vNote" hidden>La descarga es para quienes compran el pack.</span><a class="btn" id="vOpen" href="#" target="_blank" rel="noopener">Abrir en Drive</a><a class="btn light" id="vDl" href="#" target="_blank" rel="noopener">Descargar</a></div></div>
   </div>
 </div>
 
 <input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" hidden>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
-<script src="app.js?v=v5.5" defer></script>
+<script src="app.js?v=v4.3" defer></script>
 </body>
 </html>
