@@ -1000,7 +1000,14 @@ function play(f){
   const cargando = `<span class="ldr"><i></i>Cargando…</span>`;
   // Primero el reproductor propio (no deja pasar de 1:50 aunque se mueva la barra); si el archivo no es
   // público o Drive no lo entrega directo, se usa el reproductor de Google Drive.
-  const conRespaldo = (box, html) => montarDirecto(f, box, seq).then(ok => { if(!ok && seq === playSeq && current && fkey(current) === fkey(f)) box.innerHTML = html; });
+  // Quien puede descargar usa el reproductor de Drive como respaldo. Quien no, NO: ese reproductor deja
+  // adelantar más allá de 1:50 y, si falla, muestra su propio botón "Descargar".
+  const conRespaldo = (box, html) => montarDirecto(f, box, seq).then(r => {
+    if(r.ok || seq !== playSeq || !current || fkey(current) !== fkey(f)) return;
+    if(canDl(f)){ box.innerHTML = html; return; }
+    box.innerHTML = `<div class="mfail"><b>No se pudo cargar la vista previa.</b><span>${r.formato ? "El navegador no puede reproducir el formato de este archivo." : "Google Drive no lo entregó. Si el archivo se subió hace poco, Drive puede seguir procesándolo; prueba en unos minutos."}</span><button type="button" class="btn sm" data-replay>Reintentar</button></div>`;
+    box.querySelector("[data-replay]").addEventListener("click", () => { current = null; play(f); });
+  });
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => (x.id || x.h) && (x.k==="v" || x.k==="a"));
   document.body.classList.add("playing"); $("#dock").classList.add("on"); $("#disc").classList.add("spin");
@@ -1040,11 +1047,11 @@ function montarDirecto(f, box, seq){
   return new Promise(res => {
     const esVideo = f.k === "v", m = document.createElement(esVideo ? "video" : "audio");
     let hecho = false;
-    const fin = ok => { if(hecho) return; hecho = true; clearTimeout(t); if(!ok){ try{ m.removeAttribute("src"); m.load(); }catch(_){} } res(ok); };
-    const t = setTimeout(() => fin(false), 9000);
+    const fin = (ok, formato) => { if(hecho) return; hecho = true; clearTimeout(t); if(!ok){ try{ m.removeAttribute("src"); m.load(); }catch(_){} } res({ ok, formato:!!formato }); };
+    const t = setTimeout(() => fin(false), 15000);
     m.preload = "auto"; m.playsInline = true; m.controls = false; m.disablePictureInPicture = true;
     m.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
-    m.addEventListener("error", () => fin(false), { once:true });
+    m.addEventListener("error", () => fin(false, m.error && m.error.code === 4 && /\.(mov|mkv|avi|wmv|flv|m2ts|mts|3gp)$/i.test(f.nombre)), { once:true });
     m.addEventListener("loadedmetadata", () => {
       if(hecho) return;
       if(seq !== playSeq || !current || fkey(current) !== fkey(f)){ fin(false); return; }
