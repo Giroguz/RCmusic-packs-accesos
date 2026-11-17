@@ -1021,30 +1021,81 @@ function play(f){
 // Audio privado: el servidor entrega solo el comienzo del archivo y suena aquí mismo, 1 min 50 s como máximo
 // El audio no se muestra con los controles del navegador (esos traen "Descargar"): se usa un reproductor propio
 // con reproducir/pausar, tiempo y barra, limitado a 1 min 50 s, sin menú ni clic derecho.
-let muestraURL = "", muestraSeq = 0, muestraAudio = null;
+// Arranque rápido: primero llega un trozo pequeño (empieza a sonar enseguida) y el resto se pide por detrás;
+// cuando llega, se cambia al audio completo sin cortar. La pista siguiente se deja preparada.
+let muestraSeq = 0, muestraAudio = null, muestraUI = null;
+const MUESTRAS = new Map();                   // en memoria mientras la página siga abierta (máx. 8 pistas)
+const URLS_MUESTRA = new Set();
+function guardarMuestra(k, m){ MUESTRAS.delete(k); MUESTRAS.set(k, m); while(MUESTRAS.size > 8) MUESTRAS.delete(MUESTRAS.keys().next().value); }
+function bytesDe(b64){ const bin = atob(b64 || ""), u = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+function urlMuestra(m){ const u = URL.createObjectURL(new Blob(m.b ? [m.a, m.b] : [m.a], { type:m.mime || "audio/mpeg" })); URLS_MUESTRA.add(u); return u; }
+function soltarURL(u){ if(u && URLS_MUESTRA.has(u)){ URL.revokeObjectURL(u); URLS_MUESTRA.delete(u); } }
 function pararMuestra(){
-  if(muestraAudio){ try{ muestraAudio.pause(); }catch(_){} muestraAudio.removeAttribute("src"); try{ muestraAudio.load(); }catch(_){} muestraAudio = null; }
-  if(muestraURL){ URL.revokeObjectURL(muestraURL); muestraURL = ""; }
+  if(muestraAudio){ const u = muestraAudio.src; try{ muestraAudio.pause(); }catch(_){} muestraAudio.removeAttribute("src"); try{ muestraAudio.load(); }catch(_){} soltarURL(u); muestraAudio = null; }
+  URLS_MUESTRA.forEach(u => URL.revokeObjectURL(u)); URLS_MUESTRA.clear();
+  muestraUI = null;
 }
-function reproductorPropio(a){
+async function primeraParte(c, f){
+  const k = c.id + "|" + fkey(f), m = MUESTRAS.get(k);
+  if(m) return m;
+  const r = await api("muestra", { pack:c.id, file:f.h, parte:0, token:U.token||"", admin:A.token||"" });
+  const nueva = { mime:r.mime, a:bytesDe(r.b64), b:null, mas:!!r.mas };
+  guardarMuestra(k, nueva);
+  return nueva;
+}
+async function segundaParte(c, f, m){
+  if(m.b || !m.mas) return m;
+  if(!m.pidiendo) m.pidiendo = api("muestra", { pack:c.id, file:f.h, parte:1, token:U.token||"", admin:A.token||"" })
+    .then(r => { m.b = bytesDe(r.b64); return m; }).finally(() => { m.pidiendo = null; });
+  return m.pidiendo;
+}
+// Prepara solo el primer trozo de la pista siguiente (para que el salto sea inmediato)
+function precargarSiguiente(){
+  if(!current || !queue.length) return;
+  const i = queue.findIndex(x => fkey(x) === fkey(current)), sig = queue[(i + 1) % queue.length];
+  if(!sig || sig === current || !sig.h || sig.id || !F.c || MUESTRAS.has(F.c.id + "|" + fkey(sig))) return;
+  primeraParte(F.c, sig).catch(() => {});
+}
+function reproductorPropio(){
   const lim = PREVIEW_LIMIT_MS / 1000, box = document.createElement("div");
   box.className = "mplay";
   box.innerHTML = `<button type="button" class="mp-btn" aria-label="Pausar">${I.pause}</button><span class="mp-t">0:00</span>` +
     `<input type="range" class="mp-bar" min="0" max="${lim}" step="0.1" value="0" aria-label="Posición de la vista previa"><span class="mp-d">${mmss(lim * 1000)}</span>`;
-  const btn = box.querySelector(".mp-btn"), bar = box.querySelector(".mp-bar"), t = box.querySelector(".mp-t"), dur = box.querySelector(".mp-d");
-  const tope = () => Math.min(lim, isFinite(a.duration) && a.duration > 0 ? a.duration : lim);
-  const pinta = () => { btn.innerHTML = a.paused ? I.play : I.pause; btn.setAttribute("aria-label", a.paused ? "Reproducir" : "Pausar"); };
-  btn.addEventListener("click", () => { if(a.paused){ if(a.currentTime >= tope() - 0.2) a.currentTime = 0; a.play().catch(() => {}); } else a.pause(); });
-  bar.addEventListener("input", () => { a.currentTime = Math.min(Number(bar.value), tope() - 0.1); });
-  a.addEventListener("loadedmetadata", () => { bar.max = tope(); dur.textContent = mmss(tope() * 1000); });
-  a.addEventListener("timeupdate", () => {
-    if(a.currentTime >= lim){ a.pause(); a.currentTime = 0; }
-    if(document.activeElement !== bar) bar.value = a.currentTime;
-    t.textContent = mmss(a.currentTime * 1000);
-  });
-  ["play","pause","ended"].forEach(ev => a.addEventListener(ev, pinta));
+  const ui = { box, btn:box.querySelector(".mp-btn"), bar:box.querySelector(".mp-bar"), t:box.querySelector(".mp-t"), dur:box.querySelector(".mp-d"), lim, total:0 };
+  ui.tope = () => Math.min(lim, ui.total > 0 ? ui.total : lim);
+  ui.pinta = () => { const a = muestraAudio; if(!a) return; ui.btn.innerHTML = a.paused ? I.play : I.pause; ui.btn.setAttribute("aria-label", a.paused ? "Reproducir" : "Pausar"); };
+  ui.btn.addEventListener("click", () => { const a = muestraAudio; if(!a) return; if(a.paused){ if(a.currentTime >= ui.tope() - 0.2) a.currentTime = 0; a.play().catch(() => {}); } else a.pause(); });
+  ui.bar.addEventListener("input", () => { const a = muestraAudio; if(a) a.currentTime = Math.min(Number(ui.bar.value), Math.max(0, (isFinite(a.duration) ? a.duration : ui.tope()) - 0.1)); });
   box.addEventListener("contextmenu", e => e.preventDefault());
-  return box;
+  return ui;
+}
+// Conecta un elemento de audio al reproductor propio (se llama otra vez al cambiar al audio completo)
+function enlazar(ui, a, completo){
+  a.addEventListener("loadedmetadata", () => {
+    if(completo || !ui.total) ui.total = isFinite(a.duration) ? a.duration : 0;
+    ui.bar.max = ui.tope(); ui.dur.textContent = mmss(ui.tope() * 1000);
+  });
+  a.addEventListener("timeupdate", () => {
+    if(a !== muestraAudio) return;
+    if(a.currentTime >= ui.lim){ a.pause(); a.currentTime = 0; }
+    if(document.activeElement !== ui.bar) ui.bar.value = a.currentTime;
+    ui.t.textContent = mmss(a.currentTime * 1000);
+  });
+  ["play","pause","ended"].forEach(ev => a.addEventListener(ev, () => { if(a === muestraAudio) ui.pinta(); }));
+}
+// Cambia al audio completo en el mismo segundo, sin cortar (el nuevo empieza antes de pausar el anterior)
+function cambiarACompleto(ui, m){
+  const viejo = muestraAudio; if(!viejo || !ui) return;
+  const b = new Audio(); b.preload = "auto"; b.src = urlMuestra(m);
+  b.addEventListener("canplay", () => {
+    if(muestraAudio !== viejo){ soltarURL(b.src); return; }
+    const pos = viejo.ended ? (viejo.duration || viejo.currentTime) : viejo.currentTime, sonaba = !viejo.paused || viejo.ended;
+    try{ b.currentTime = pos; }catch(_){}
+    muestraAudio = b; enlazar(ui, b, true);
+    if(isFinite(b.duration) && b.duration > 0){ ui.total = b.duration; ui.bar.max = ui.tope(); ui.dur.textContent = mmss(ui.tope() * 1000); }
+    const fin = () => { const u = viejo.src; viejo.pause(); viejo.removeAttribute("src"); soltarURL(u); ui.pinta(); };
+    if(sonaba && pos < ui.lim) b.play().then(fin, fin); else fin();
+  }, { once:true });
 }
 async function playMuestra(f){
   const seq = ++muestraSeq, c = F.c;
@@ -1054,21 +1105,23 @@ async function playMuestra(f){
   $("#dockS").textContent = [c.nombre, f.bpm ? f.bpm.txt + " BPM" : ""].filter(Boolean).join(" · ");
   $("#hudL").textContent = "SEÑAL · EN VIVO"; $("#hudL").className = "live";
   $("#hudR").textContent = (f.bpm ? f.bpm.txt : "—") + " BPM"; $("#hudNow").textContent = "▶ " + f.nombre;
-  $("#dockFrame").innerHTML = `<span class="ldr"><i></i>Preparando la vista previa…</span>`;
+  if(!MUESTRAS.has(c.id + "|" + fkey(f))) $("#dockFrame").innerHTML = `<span class="ldr"><i></i>Preparando la vista previa…</span>`;
   refreshRows();
-  let r;
-  try{ r = await api("muestra", { pack:c.id, file:f.h, token:U.token||"", admin:A.token||"" }); }
+  let m;
+  try{ m = await primeraParte(c, f); }
   catch(ex){ if(seq !== muestraSeq) return; $("#dockFrame").textContent = ex.message; toast(ex.message); current = null; $("#disc").classList.remove("spin"); refreshRows(); return; }
   if(seq !== muestraSeq || !current || fkey(current) !== fkey(f)) return;
-  const bin = atob(r.b64), bytes = new Uint8Array(bin.length);
-  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   pararMuestra();
-  muestraURL = URL.createObjectURL(new Blob([bytes], { type:r.mime || "audio/mpeg" }));
-  const a = muestraAudio = new Audio();
-  a.preload = "auto"; a.src = muestraURL;
-  $("#dockFrame").replaceChildren(reproductorPropio(a));
+  const ui = muestraUI = reproductorPropio(), a = muestraAudio = new Audio();
+  a.preload = "auto"; a.src = urlMuestra(m);
+  enlazar(ui, a, !!m.b || !m.mas);
+  $("#dockFrame").replaceChildren(ui.box);
   try{ await a.play(); }catch(_){}
   startPreviewLimit(f);
+  if(m.mas && !m.b){
+    segundaParte(c, f, m).then(() => { if(seq === muestraSeq && muestraUI === ui) cambiarACompleto(ui, m); }).catch(() => {});
+  }
+  setTimeout(() => { if(seq === muestraSeq) precargarSiguiente(); }, 1500);
 }
 function stop(){
   clearPreviewTimeout(); pararMuestra(); muestraSeq++;
