@@ -1388,13 +1388,14 @@ function readPanel(el){ const o = {}; el.querySelectorAll("[data-f]").forEach(i 
 const E = { portada:"" };
 let FILE_TARGET = "portada";
 const TIPOS = [["Audio","Audio"],["Video","Video"],["Mixto","Mixto (audio y video)"],["Software","Software"],["Herramientas","Herramientas DJ"],["Actualizaciones","Actualizaciones"]];
-const VISIT = [["auto","Según los permisos de Google Drive"],["privada","Solo ven la lista"]];
-const visDe = v => v === "privada" ? "privada" : "auto";
+const VISIT = [["auto","Según los permisos de Google Drive"],["escuchar","Reproducen todos · descargan solo con acceso (videos)"],["privada","Solo ven la lista"]];
+const visDe = v => v === "privada" || v === "escuchar" ? v : "auto";
 const VISIT_HELP = {
   auto:"No se cambia nada en Drive. Carpeta como “Cualquier persona con el enlace”: todo el público reproduce y descarga. Carpeta privada: todo el público escucha 1 min 50 s de cada audio, y descargan solo quienes aprobaste o compartiste como lector en Drive.",
+  escuchar:"Para videos y carpetas que quieres mostrar sin regalar. En Drive comparte la carpeta como “Cualquier persona con el enlace · Lector” (la web no cambia permisos). Todo el público reproduce 1 min 50 s, también los videos; la web solo muestra la descarga a quienes aprobaste o compartiste como lector. Ojo: quien sepa usar Drive podría abrir el archivo en Google y bajarlo desde ahí.",
   privada:"Los visitantes solo ven la lista de nombres. Quienes aprobaste o compartiste como lector en Drive reproducen y descargan. No se cambia nada en Drive."
 };
-const VISIT_PILL = { privada:["Solo lista","no"], auto:["Según Drive",""] };
+const VISIT_PILL = { privada:["Solo lista","no"], escuchar:["Solo reproducir","si"], auto:["Según Drive",""] };
 function carForm(c){
   E.portada = c.portada || "";
   const isData = /^data:/.test(E.portada), mod = c.modalidad || "Único", vis = visDe(c.visitantes);
