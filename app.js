@@ -221,15 +221,17 @@ function demoTree(nombre, v, ids, ruta){
   return t;
 }
 // Lo que ve un visitante en modo demostración (imita vistaPublica_ del servidor)
+// Demo: "publica" = carpeta abierta en Drive (reproducir y descargar) · "privada" = solo lista ·
+// cualquier otro = carpeta privada en Drive (muestra de 1 min 50 s de cada audio)
 function demoVista(n, modo){
-  const pub = modo === "reproducir" || modo === "publica", dl = modo === "publica", o = { n:n.n, h:n.h };
-  if(pub) o.p = 1; if(dl && n.d) o.d = n.d; if(n.z) o.z = 1; if(n.c !== undefined) o.c = n.c;
-  o.f = n.f.map(x => pub && x[2] ? [x[0], x[1], x[2], dl ? 3 : 1] : [x[0], x[1]]);
+  const pub = modo === "publica", o = { n:n.n, h:n.h };
+  if(pub){ o.p = 1; if(n.d) o.d = n.d; } if(n.z) o.z = 1; if(n.c !== undefined) o.c = n.c;
+  o.f = n.f.map(x => modo === "privada" || !x[2] ? [x[0], x[1]] : pub ? [x[0], x[1], x[2], 3] : x[1] === "a" ? [x[0], x[1], "", 0, "ademo" + x[2]] : [x[0], x[1]]);
   o.s = n.s.map(x => demoVista(x, modo));
   return o;
 }
 const demoModo = c => reproDe(demoAj().reproduccion) === "todos" ? (c.visitantes || "auto") : "privada";
-const demoLibre = c => demoModo(c) === "publica" ? 2 : demoModo(c) === "reproducir" ? 1 : 0;
+const demoLibre = c => demoModo(c) === "publica" ? 2 : demoModo(c) === "privada" || ["Video","Software"].includes(c.tipo) ? 0 : 1;
 const countTree = t => t.f.length + t.s.reduce((n,x)=>n+countTree(x),0);
 const DK = { car:"rc6_demo_car", regs:"rc5_demo_regs", sols:"rc5_demo_sols", aj:"rc5_demo_aj" };
 const isoIn = n => new Date(Date.now()+n*864e5).toISOString();
@@ -291,6 +293,7 @@ async function demoApi(accion, d){
       (function walk(n, ruta){ n.f.forEach(x => { const s = (x[0] + " " + ruta.join(" / ")).toLowerCase(); if(qs.every(q => s.includes(q))) r.push({ r:ruta, f:x }); }); n.s.forEach(s => walk(s, ruta.concat(s.n))); })(v, []);
       return { ok:true, acceso, total:r.length, r:r.slice(0,300) };
     }
+    case "muestra": throw new Error("Muestra de ejemplo: con tu Drive conectado aquí suena el comienzo de la canción (1 min 50 s).");
     case "carpeta": {
       const c = cars.find(x=>x.id===d.pack); if(!c) throw new Error("Este pack ya no está disponible.");
       if(!DEMO_FILES[c.nombre]) return { ok:true, sinEnlace:true, acceso:false, nodo:{ n:c.nombre, f:[], s:[] } };
@@ -630,7 +633,9 @@ function renderTreeKeep(){
   if(sc) sc.scrollTop = y; if(msc) msc.scrollTop = my;
 }
 // ¿Hay algo que un visitante pueda reproducir en este pack?
-function treePlayable(n){ n = n || F.tree; if(!n) return false; return (n.f||[]).some(x => x[2]) || (n.s||[]).some(treePlayable); }
+function treePlayable(n){ n = n || F.tree; if(!n) return false; return (n.f||[]).some(x => x[2] || x[4]) || (n.s||[]).some(treePlayable); }
+// Clave de un archivo: su ID, o el código de muestra si es privado para quien lo ve
+const fkey = f => (f && (f.id || f.h)) || "";
 const canView = f => !!f.id && (F.own || (f.p & 2) === 2);
 const canDl = f => canView(f) && AJ.descargasCanciones !== false;
 function paintPackState(r){
@@ -665,7 +670,7 @@ function buildGroups(){
   const q = F.q.trim().toLowerCase(), out = [];
   (function walk(node, ruta){
     const enRuta = q && ruta.join(" / ").toLowerCase().includes(q);
-    const files = (node.f||[]).map(x => ({ nombre:x[0], k:x[1], id:x[2]||"", p:Number(x[3])||0, bpm:parseBpm(x[0]) }))
+    const files = (node.f||[]).map(x => ({ nombre:x[0], k:x[1], id:x[2]||"", p:Number(x[3])||0, h:x[4]||"", bpm:parseBpm(x[0]) }))
       .filter(f => !q || enRuta || f.nombre.toLowerCase().includes(q) || (f.bpm && f.bpm.txt.includes(q))).sort(byBpm);
     const g = { ruta, key:ruta.join("\u0001"), nivel:ruta.length, files, total:(node.f||[]).length, d:node.d || "", lazy:!!node.z, err:node.err || "" };
     out.push(g);
@@ -771,10 +776,10 @@ function renderBusqueda(){
   L.innerHTML = lista.map(([k, files]) => `<div class="fgroup open busq"><div class="fhead"><div class="fsum">${I.folder}<span class="gname">${esc(k || F.c.nombre)}</span><small>${files.length}</small></div></div><div class="rows">${files.map(fileRow).join("")}</div></div>`).join("");
 }
 function fileRow(f){
-  const locked = !f.id, demo = !locked && isDemoId(f.id), on = current && current.id === f.id, playable = (f.k==="v" || f.k==="a") && !sinPlayer();
+  const locked = !f.id && !f.h, demo = !!f.id && isDemoId(f.id), on = !!current && fkey(current) === fkey(f), playable = (f.k==="v" || f.k==="a") && !sinPlayer();
   const icon = locked ? I.lock : f.k==="i" ? I.img : playable ? (on ? I.pause : I.play) : I.file;
   const lead = playable && !locked
-    ? `<button type="button" class="fthumb" data-play="${esc(f.id)}" aria-label="${on?"Detener":"Reproducir"} ${esc(f.nombre)}">${icon}</button>`
+    ? `<button type="button" class="fthumb" data-play="${esc(fkey(f))}" aria-label="${on?"Detener":"Reproducir"} ${esc(f.nombre)}">${icon}</button>`
     : `<span class="fthumb"${locked?' title="Disponible al comprar el pack"':""}>${icon}</span>`;
   const lk = (u,l,ic,cls="") => `<a class="ico ${cls}" href="${demo?"#":u}" ${demo?'data-demo="1"':'target="_blank" rel="noopener"'} aria-label="${l}" title="${l}">${ic}</a>`;
   const acts = locked ? "" : (canView(f) ? lk(D.view(f.id),"Abrir en Google Drive",I.open) : "") + (canDl(f) ? lk(D.dl(f.id),f.k === "a" ? "Descargar canción" : "Descargar",I.dl) : "")
@@ -953,7 +958,7 @@ function clearPreviewTimeout(){
   $$("[data-preview-cd]").forEach(cd => { cd.hidden = true; });
 }
 function startPreviewLimit(f){
-  if(!f || isDemoId(f.id) || (f.k !== "a" && f.k !== "v")) return;
+  if(!f || (f.id ? isDemoId(f.id) : !f.h) || (f.k !== "a" && f.k !== "v")) return;
   clearPreviewTimeout();
   const playingId = f.id, fin = Date.now() + PREVIEW_LIMIT_MS;
   const pinta = () => $$("[data-preview-cd]").forEach(cd => { cd.hidden = false; cd.textContent = "Vista previa · " + mmss(fin - Date.now()); });
@@ -964,6 +969,7 @@ function startPreviewLimit(f){
     if(!current || current.id !== playingId) return;
     const message = "Vista previa terminada (1 min 50 s). Pulsa ▶ para escucharla otra vez.";
     // Quitar el iframe detiene también el reproductor que vive dentro de Drive.
+    pararMuestra();
     $("#dockFrame").replaceChildren();
     $("#vFrame").replaceChildren();
     if(current.k === "v"){
@@ -985,11 +991,12 @@ function startPreviewLimit(f){
 }
 function play(f){
   if(sinPlayer()) return;
-  if(current && current.id === f.id && f.k === "a"){ stop(); return; }
-  clearPreviewTimeout();
+  if(current && fkey(current) === fkey(f) && f.k === "a"){ stop(); return; }
+  clearPreviewTimeout(); pararMuestra();
+  if(!f.id && f.h) return playMuestra(f);
   const demo = isDemoId(f.id);
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
-  current = f; queue = F.view.filter(x => x.id && (x.k==="v" || x.k==="a"));
+  current = f; queue = F.view.filter(x => (x.id || x.h) && (x.k==="v" || x.k==="a"));
   document.body.classList.add("playing"); $("#dock").classList.add("on"); $("#disc").classList.add("spin");
   $("#dockT").textContent = f.nombre.replace(/\.[^.]+$/,"");
   $("#dockS").textContent = [F.c.nombre, f.bpm ? f.bpm.txt + " BPM" : ""].filter(Boolean).join(" · ");
@@ -1010,8 +1017,39 @@ function play(f){
   }
   refreshRows();
 }
+// Audio privado: el servidor entrega solo el comienzo del archivo y suena aquí mismo, 1 min 50 s como máximo
+let muestraURL = "", muestraSeq = 0;
+function pararMuestra(){
+  const a = $("#dockFrame audio"); if(a){ try{ a.pause(); }catch(_){} a.removeAttribute("src"); }
+  if(muestraURL){ URL.revokeObjectURL(muestraURL); muestraURL = ""; }
+}
+async function playMuestra(f){
+  const seq = ++muestraSeq, c = F.c;
+  current = f; queue = F.view.filter(x => (x.id || x.h) && (x.k==="v" || x.k==="a"));
+  document.body.classList.add("playing"); $("#dock").classList.add("on"); $("#disc").classList.add("spin");
+  $("#dockT").textContent = f.nombre.replace(/\.[^.]+$/,"");
+  $("#dockS").textContent = [c.nombre, f.bpm ? f.bpm.txt + " BPM" : ""].filter(Boolean).join(" · ");
+  $("#hudL").textContent = "SEÑAL · EN VIVO"; $("#hudL").className = "live";
+  $("#hudR").textContent = (f.bpm ? f.bpm.txt : "—") + " BPM"; $("#hudNow").textContent = "▶ " + f.nombre;
+  $("#dockFrame").innerHTML = `<span class="ldr"><i></i>Preparando la vista previa…</span>`;
+  refreshRows();
+  let r;
+  try{ r = await api("muestra", { pack:c.id, file:f.h, token:U.token||"", admin:A.token||"" }); }
+  catch(ex){ if(seq !== muestraSeq) return; $("#dockFrame").textContent = ex.message; toast(ex.message); current = null; $("#disc").classList.remove("spin"); refreshRows(); return; }
+  if(seq !== muestraSeq || !current || fkey(current) !== fkey(f)) return;
+  const bin = atob(r.b64), bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  pararMuestra();
+  muestraURL = URL.createObjectURL(new Blob([bytes], { type:r.mime || "audio/mpeg" }));
+  const a = document.createElement("audio");
+  a.controls = true; a.autoplay = true; a.preload = "auto"; a.src = muestraURL; a.className = "muestra";
+  a.addEventListener("timeupdate", () => { if(a.currentTime >= PREVIEW_LIMIT_MS / 1000){ a.pause(); a.currentTime = 0; } });
+  $("#dockFrame").replaceChildren(a);
+  try{ await a.play(); }catch(_){}
+  startPreviewLimit(f);
+}
 function stop(){
-  clearPreviewTimeout();
+  clearPreviewTimeout(); pararMuestra(); muestraSeq++;
   current = null;
   document.body.classList.remove("playing"); $("#dock").classList.remove("on"); $("#disc").classList.remove("spin");
   setTimeout(() => { if(!current) $("#dockFrame").innerHTML = ""; }, 400);
@@ -1021,14 +1059,14 @@ function stop(){
 }
 function step(d){
   if(!queue.length) return;
-  const i = current ? queue.findIndex(x => x.id === current.id) : -1;
+  const i = current ? queue.findIndex(x => fkey(x) === fkey(current)) : -1;
   play(queue[(i + d + queue.length) % queue.length]);
 }
 // Actualiza solo los botones de reproducción (sin redibujar la lista ni perder el scroll)
 function refreshRows(){
   $$("#fList .frow").forEach(r => {
     const b = r.querySelector("[data-play]"); if(!b) return;
-    const on = !!(current && current.id === b.dataset.play);
+    const on = !!(current && fkey(current) === b.dataset.play);
     r.classList.toggle("playing", on); b.innerHTML = on ? I.pause : I.play;
   });
 }
@@ -1278,8 +1316,8 @@ const TIPOS = [["Audio","Audio"],["Video","Video"],["Mixto","Mixto (audio y vide
 const VISIT = [["auto","Según los permisos de Google Drive"],["privada","Solo ven la lista"]];
 const visDe = v => v === "privada" ? "privada" : "auto";
 const VISIT_HELP = {
-  auto:"No se cambia nada en Drive. Si la carpeta o el archivo está como “Cualquier persona con el enlace”, todo el público lo reproduce (1 min 50 s). Si es privado, los visitantes solo ven la lista. Descargan solo quienes aprobaste y quienes compartiste como lector en Drive.",
-  privada:"Los visitantes solo ven la lista, aunque la carpeta esté abierta en Drive. Quienes aprobaste o compartiste como lector en Drive reproducen y descargan. No se cambia nada en Drive."
+  auto:"No se cambia nada en Drive. Carpeta como “Cualquier persona con el enlace”: todo el público reproduce y descarga. Carpeta privada: todo el público escucha 1 min 50 s de cada audio, y descargan solo quienes aprobaste o compartiste como lector en Drive.",
+  privada:"Los visitantes solo ven la lista de nombres. Quienes aprobaste o compartiste como lector en Drive reproducen y descargan. No se cambia nada en Drive."
 };
 const VISIT_PILL = { privada:["Solo lista","no"], auto:["Según Drive",""] };
 function carForm(c){
@@ -1369,8 +1407,8 @@ function fillAjustes(){
   $("#jQuota").textContent = A.cuota != null ? `Correos disponibles hoy en tu cuenta de Google: ${A.cuota}.` : "";
 }
 const REPRO_HELP = {
-  todos:"El público reproduce lo que Drive deja ver (1 min 50 s por pista). Quienes tienen acceso también descargan. No se cambian permisos de Drive.",
-  compradores:"Solo reproducen (1 min 50 s) quienes aprobaste o compartiste como lector en Drive. Los visitantes ven la lista de nombres.",
+  todos:"Carpetas públicas en Drive: todos reproducen y descargan. Carpetas privadas: todos escuchan 1 min 50 s de cada audio; descargan solo quienes tienen acceso. No se cambian permisos de Drive.",
+  compradores:"Solo reproducen quienes aprobaste o compartiste como lector en Drive. Los visitantes ven la lista de nombres.",
   nadie:"Se quita el reproductor de la web para todos. Quienes tienen acceso siguen descargando. No se cambian permisos de Drive."
 };
 function paintReproHelp(){ $("#jReproHelp").textContent = REPRO_HELP[$("#jRepro").value] || ""; }
@@ -1581,7 +1619,7 @@ function bind(){
       if(el) el.scrollIntoView({ behavior:"smooth", block:"start" }); return; }
     const rl = t.closest("[data-relive]"); if(rl){ const ruta = rl.dataset.relive.split("\u0001"), n = nodeAt(ruta); if(n) delete n.err; renderTreeKeep(); refreshLevel(ruta, true); return; }
     const ct = t.closest("[data-cat]"); if(ct){ setCat(ct.dataset.cat, !ct.hasAttribute("data-cat-filter")); return; }
-    const p = t.closest("[data-play]"); if(p){ const f = F.view.find(x => x.id === p.dataset.play); if(f) play(f); return; }
+    const p = t.closest("[data-play]"); if(p){ const f = F.view.find(x => fkey(x) === p.dataset.play); if(f) play(f); return; }
     if(t.closest("[data-retry]")){ loadCatalog(true); loadIndex(true); return; }
     if(t.closest("[data-reopen]")){ if(F.c) openPack(F.c.id, false); return; }
     if(t.closest("[data-refresh]")){ loadAdmin(); return; }
