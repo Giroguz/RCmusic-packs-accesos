@@ -54,6 +54,8 @@ const isDemoId = id => !id || String(id).startsWith("EJEMPLO");
 const au = sep => (typeof U !== "undefined" && U.cuenta) ? `${sep}authuser=${encodeURIComponent(U.cuenta.correo)}` : "";
 const D = {
   preview: id => `https://drive.google.com/file/d/${id}/preview${au("?")}`,
+  // Archivo directo (solo funciona si está abierto en Drive): lo reproduce el reproductor propio de la web
+  stream: id => `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`,
   view:    id => `https://drive.google.com/file/d/${id}/view${au("?")}`,
   dl:      id => `https://drive.google.com/uc?export=download&confirm=t&id=${id}${au("&")}`,   // descarga directa, también archivos grandes
   folder:  id => `https://drive.google.com/drive/folders/${id}${au("?")}`,
@@ -969,7 +971,7 @@ function startPreviewLimit(f){
     if(!current || current.id !== playingId) return;
     const message = "Vista previa terminada (1 min 50 s). Pulsa ▶ para escucharla otra vez.";
     // Quitar el iframe detiene también el reproductor que vive dentro de Drive.
-    pararMuestra();
+    pararMuestra(); pararDirecto();
     $("#dockFrame").replaceChildren();
     $("#vFrame").replaceChildren();
     if(current.k === "v"){
@@ -992,9 +994,13 @@ function startPreviewLimit(f){
 function play(f){
   if(sinPlayer()) return;
   if(current && fkey(current) === fkey(f) && f.k === "a"){ stop(); return; }
-  clearPreviewTimeout(); pararMuestra();
+  clearPreviewTimeout(); pararMuestra(); pararDirecto();
   if(!f.id && f.h) return playMuestra(f);
-  const demo = isDemoId(f.id);
+  const demo = isDemoId(f.id), seq = ++playSeq;
+  const cargando = `<span class="ldr"><i></i>Cargando…</span>`;
+  // Primero el reproductor propio (no deja pasar de 1:50 aunque se mueva la barra); si el archivo no es
+  // público o Drive no lo entrega directo, se usa el reproductor de Google Drive.
+  const conRespaldo = (box, html) => montarDirecto(f, box, seq).then(ok => { if(!ok && seq === playSeq && current && fkey(current) === fkey(f)) box.innerHTML = html; });
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => (x.id || x.h) && (x.k==="v" || x.k==="a"));
   document.body.classList.add("playing"); $("#dock").classList.add("on"); $("#disc").classList.add("spin");
@@ -1009,14 +1015,76 @@ function play(f){
   if(f.k === "v"){
     $("#dockFrame").textContent = "Reproduciendo en la ventana de video";
     $("#vTitle").textContent = f.nombre.replace(/\.[^.]+$/,""); $("#vMeta").textContent = $("#dockS").textContent;
-    $("#vFrame").innerHTML = demo ? "Vista previa de ejemplo · con tu Drive conectado aquí se ve el video" : frame;
+    $("#vFrame").innerHTML = demo ? "Vista previa de ejemplo · con tu Drive conectado aquí se ve el video" : cargando;
+    if(!demo) conRespaldo($("#vFrame"), frame);
     [["#vOpen",D.view,canView(f)],["#vDl",D.dl,canDl(f)]].forEach(([s,fn,ok]) => { const a = $(s); a.hidden = !ok; if(demo){ a.href="#"; a.dataset.demo="1"; } else { a.href=fn(f.id); delete a.dataset.demo; } });
     $("#vNote").hidden = canDl(f) || AJ.descargasCanciones === false;
     openModal("#vModal");
   } else {
-    $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : frame;
+    $("#dockFrame").innerHTML = demo ? "Ejemplo · sin archivo conectado" : cargando;
+    if(!demo) conRespaldo($("#dockFrame"), frame);
   }
   refreshRows();
+}
+/* ---------- Reproductor propio para archivos abiertos en Drive (audio y video) ----------
+   Sin controles del navegador (no hay "Descargar"), sin clic derecho, y nunca pasa de 1 min 50 s:
+   la barra llega solo hasta 1:50 y, si se intenta saltar más allá, vuelve al inicio. */
+let playSeq = 0, directoMedia = null;
+function pararDirecto(){
+  if(!directoMedia) return;
+  try{ directoMedia.pause(); }catch(_){}
+  directoMedia.removeAttribute("src"); try{ directoMedia.load(); }catch(_){}
+  directoMedia = null;
+}
+function montarDirecto(f, box, seq){
+  return new Promise(res => {
+    const esVideo = f.k === "v", m = document.createElement(esVideo ? "video" : "audio");
+    let hecho = false;
+    const fin = ok => { if(hecho) return; hecho = true; clearTimeout(t); if(!ok){ try{ m.removeAttribute("src"); m.load(); }catch(_){} } res(ok); };
+    const t = setTimeout(() => fin(false), 9000);
+    m.preload = "auto"; m.playsInline = true; m.controls = false; m.disablePictureInPicture = true;
+    m.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
+    m.addEventListener("error", () => fin(false), { once:true });
+    m.addEventListener("loadedmetadata", () => {
+      if(hecho) return;
+      if(seq !== playSeq || !current || fkey(current) !== fkey(f)){ fin(false); return; }
+      fin(true);
+      directoMedia = m;
+      box.replaceChildren(controlesDirectos(m, esVideo));
+      m.play().catch(() => {});
+    }, { once:true });
+    m.src = D.stream(f.id);
+  });
+}
+function controlesDirectos(m, esVideo){
+  const lim = PREVIEW_LIMIT_MS / 1000, wrap = document.createElement("div");
+  wrap.className = "mdirect" + (esVideo ? " video" : "");
+  const bar = document.createElement("div");
+  bar.className = "mplay";
+  bar.innerHTML = `<button type="button" class="mp-btn" aria-label="Pausar">${I.pause}</button><span class="mp-t">0:00</span>` +
+    `<input type="range" class="mp-bar" min="0" max="${lim}" step="0.1" value="0" aria-label="Posición de la vista previa"><span class="mp-d">${mmss(lim * 1000)}</span>` +
+    (esVideo ? `<button type="button" class="mp-fs" aria-label="Pantalla completa"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>` : "");
+  if(esVideo){ m.className = "mvideo"; wrap.append(m); }
+  wrap.append(bar);
+  const btn = bar.querySelector(".mp-btn"), rng = bar.querySelector(".mp-bar"), t = bar.querySelector(".mp-t"), dur = bar.querySelector(".mp-d");
+  const tope = () => Math.min(lim, isFinite(m.duration) && m.duration > 0 ? m.duration : lim);
+  rng.max = tope(); dur.textContent = mmss(tope() * 1000);
+  const pinta = () => { btn.innerHTML = m.paused ? I.play : I.pause; btn.setAttribute("aria-label", m.paused ? "Reproducir" : "Pausar"); };
+  btn.addEventListener("click", () => { if(m.paused){ if(m.currentTime >= tope() - 0.2) m.currentTime = 0; m.play().catch(() => {}); } else m.pause(); });
+  rng.addEventListener("input", () => { m.currentTime = Math.min(Number(rng.value), tope() - 0.1); });
+  m.addEventListener("seeking", () => { if(m.currentTime > lim) m.currentTime = 0; });
+  m.addEventListener("timeupdate", () => {
+    if(m.currentTime >= lim){ m.pause(); m.currentTime = 0; }
+    if(document.activeElement !== rng) rng.value = m.currentTime;
+    t.textContent = mmss(m.currentTime * 1000);
+  });
+  ["play","pause","ended"].forEach(ev => m.addEventListener(ev, pinta));
+  if(esVideo){
+    m.addEventListener("click", () => btn.click());
+    bar.querySelector(".mp-fs").addEventListener("click", () => { const el = wrap; (document.fullscreenElement ? document.exitFullscreen() : (el.requestFullscreen || el.webkitRequestFullscreen || (() => Promise.reject())).call(el)).catch?.(() => {}); });
+  }
+  wrap.addEventListener("contextmenu", e => e.preventDefault());
+  return wrap;
 }
 // Audio privado: el servidor entrega solo el comienzo del archivo y suena aquí mismo, 1 min 50 s como máximo
 // El audio no se muestra con los controles del navegador (esos traen "Descargar"): se usa un reproductor propio
@@ -1124,7 +1192,7 @@ async function playMuestra(f){
   setTimeout(() => { if(seq === muestraSeq) precargarSiguiente(); }, 1500);
 }
 function stop(){
-  clearPreviewTimeout(); pararMuestra(); muestraSeq++;
+  clearPreviewTimeout(); pararMuestra(); pararDirecto(); muestraSeq++; playSeq++;
   current = null;
   document.body.classList.remove("playing"); $("#dock").classList.remove("on"); $("#disc").classList.remove("spin");
   setTimeout(() => { if(!current) $("#dockFrame").innerHTML = ""; }, 400);
@@ -1202,7 +1270,7 @@ function openModal(sel){
 function closeModal(m, fromPop=false){
   if(!m || (!m.classList.contains("open") && !m.classList.contains("minimized"))) return;
   m.classList.remove("open","minimized"); updateMinimizedTray();
-  if(m.id === "vModal"){ $("#vFrame").innerHTML = ""; if(current && current.k === "v") $("#dockFrame").textContent = "Video cerrado · pulsa ▶ para verlo otra vez"; }
+  if(m.id === "vModal"){ if(directoMedia && directoMedia.tagName === "VIDEO") pararDirecto(); playSeq++; $("#vFrame").innerHTML = ""; if(current && current.k === "v") $("#dockFrame").textContent = "Video cerrado · pulsa ▶ para verlo otra vez"; }
   if(m.id === "fModal"){ F.req++; clearTimeout(F.poll); }
   if(!fromPop && history.state && history.state.__rcModal === m.id){
     const prev=history.state.__rcPrevUrl || location.href;
