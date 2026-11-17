@@ -720,3 +720,14 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 .mfail span{color:var(--mute);max-width:440px;font-size:13px}
 #dockFrame .mfail{flex-direction:row;padding:6px 12px;font-size:12.5px}
 #dockFrame .mfail span{display:none}
+
+/* v4.9 · reproductor de Google Drive protegido (videos sin permiso de descarga): solo responde el centro */
+.dprot{position:absolute;inset:0;background:#000;overflow:hidden}
+.dprot iframe{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:1}
+.dprot .dshield{position:absolute;inset:0;z-index:3;outline:none;background:transparent;cursor:not-allowed;
+  clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,calc(50% - 42px) calc(50% - 42px),calc(50% + 42px) calc(50% - 42px),calc(50% + 42px) calc(50% + 42px),calc(50% - 42px) calc(50% + 42px),calc(50% - 42px) calc(50% - 42px))}
+.dprot .dhint{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:10px 14px;font:11.5px var(--f-mono);color:var(--mute);text-align:center;background:linear-gradient(transparent,rgba(5,7,15,.92) 45%);pointer-events:none;min-height:52px;display:flex;align-items:flex-end;justify-content:center}
+.dprot .dfs{position:absolute;right:8px;bottom:8px;z-index:5;width:34px;height:34px;border:0;border-radius:8px;display:grid;place-items:center;background:rgba(5,7,15,.6);color:var(--ink);cursor:pointer}
+.dprot .dfs svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.dprot:fullscreen{background:#000}
+.dprot::after{content:"";position:absolute;top:0;right:0;width:64px;height:56px;z-index:2;background:#000;pointer-events:none}

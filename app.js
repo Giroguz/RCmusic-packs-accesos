@@ -1005,6 +1005,8 @@ function play(f){
   const conRespaldo = (box, html) => montarDirecto(f, box, seq).then(r => {
     if(r.ok || seq !== playSeq || !current || fkey(current) !== fkey(f)) return;
     if(canDl(f)){ box.innerHTML = html; return; }
+    // Video sin permiso de descarga: reproductor de Google Drive "blindado" (ver montarDriveProtegido).
+    if(f.k === "v"){ montarDriveProtegido(f, box); return; }
     box.innerHTML = `<div class="mfail"><b>No se pudo cargar la vista previa.</b><span>${r.formato ? "El navegador no puede reproducir el formato de este archivo." : "Google Drive no lo entregó. Si el archivo se subió hace poco, Drive puede seguir procesándolo; prueba en unos minutos."}</span><button type="button" class="btn sm" data-replay>Reintentar</button></div>`;
     box.querySelector("[data-replay]").addEventListener("click", () => { current = null; play(f); });
   });
@@ -1037,7 +1039,32 @@ function play(f){
    Sin controles del navegador (no hay "Descargar"), sin clic derecho, y nunca pasa de 1 min 50 s:
    la barra llega solo hasta 1:50 y, si se intenta saltar más allá, vuelve al inicio. */
 let playSeq = 0, directoMedia = null;
+/* ---------- v4.9 · Respaldo para videos que el navegador no puede abrir directo ----------
+   Algunos videos (formatos que Chrome no lee, archivos pesados, o cuando Drive no entrega el archivo directo)
+   solo se ven con el reproductor de Google Drive, que convierte el video. Para quien NO puede descargar,
+   ese reproductor se muestra cubierto por una capa transparente: solo responde el centro (reproducir/pausar).
+   Quedan tapados la barra de tiempo (no se puede adelantar), el botón de abrir en otra ventana, el de
+   pantalla completa de Drive y cualquier botón "Descargar". El teclado tampoco llega al reproductor de Drive
+   (no se puede adelantar con las flechas). Al llegar a 1 min 50 s el reproductor se quita, como siempre. */
+let soltarGuardaFoco = null;
+function montarDriveProtegido(f, box){
+  box.innerHTML = `<div class="dprot"><span class="ldr"><i></i>Cargando desde Google Drive…</span>` +
+    `<iframe src="${D.preview(f.id)}" allow="autoplay" loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>` +
+    `<span class="dshield" tabindex="-1" aria-hidden="true"></span>` +
+    `<span class="dhint">Pulsa ▶ en el centro · vista previa de 1 min 50 s</span>` +
+    `<button type="button" class="dfs" aria-label="Pantalla completa"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>`;
+  const w = box.querySelector(".dprot"), ifr = w.querySelector("iframe"), sh = w.querySelector(".dshield");
+  if(soltarGuardaFoco) soltarGuardaFoco();
+  // Cuando el foco entra al reproductor de Drive (al pulsar ▶), se le quita enseguida: el video sigue sonando,
+  // pero las teclas (flechas, números) ya no lo adelantan.
+  const guarda = () => setTimeout(() => { if(document.activeElement === ifr && document.contains(ifr)) sh.focus({ preventScroll:true }); }, 80);
+  window.addEventListener("blur", guarda);
+  soltarGuardaFoco = () => { window.removeEventListener("blur", guarda); soltarGuardaFoco = null; };
+  w.querySelector(".dfs").addEventListener("click", () => { (document.fullscreenElement ? document.exitFullscreen() : (w.requestFullscreen || w.webkitRequestFullscreen || (() => Promise.reject())).call(w)).catch?.(() => {}); });
+  w.addEventListener("contextmenu", e => e.preventDefault());
+}
 function pararDirecto(){
+  if(soltarGuardaFoco) soltarGuardaFoco();
   if(!directoMedia) return;
   try{ directoMedia.pause(); }catch(_){}
   directoMedia.removeAttribute("src"); try{ directoMedia.load(); }catch(_){}
@@ -1277,7 +1304,7 @@ function openModal(sel){
 function closeModal(m, fromPop=false){
   if(!m || (!m.classList.contains("open") && !m.classList.contains("minimized"))) return;
   m.classList.remove("open","minimized"); updateMinimizedTray();
-  if(m.id === "vModal"){ if(directoMedia && directoMedia.tagName === "VIDEO") pararDirecto(); playSeq++; $("#vFrame").innerHTML = ""; if(current && current.k === "v") $("#dockFrame").textContent = "Video cerrado · pulsa ▶ para verlo otra vez"; }
+  if(m.id === "vModal"){ if(soltarGuardaFoco) soltarGuardaFoco(); if(directoMedia && directoMedia.tagName === "VIDEO") pararDirecto(); playSeq++; $("#vFrame").innerHTML = ""; if(current && current.k === "v") $("#dockFrame").textContent = "Video cerrado · pulsa ▶ para verlo otra vez"; }
   if(m.id === "fModal"){ F.req++; clearTimeout(F.poll); }
   if(!fromPop && history.state && history.state.__rcModal === m.id){
     const prev=history.state.__rcPrevUrl || location.href;
