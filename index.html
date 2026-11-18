@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=v4.11">
+<link rel="stylesheet" href="styles.css?v=v4.12">
 </head>
 <body>
 <div id="bg" aria-hidden="true"><div class="photo" id="bgPhoto" hidden></div><canvas id="bgCanvas"></canvas></div>
@@ -378,6 +378,7 @@
               <option value="compradores">Solo para quienes compraron</option>
               <option value="nadie">Desactivada</option>
             </select><span class="help" id="jReproHelp"></span></label>
+          <label class="w6">Clave de API de Google para videos (opcional, recomendada)<input type="text" id="jClaveVideo" maxlength="60" placeholder="AIza…" autocomplete="off" spellcheck="false"><span class="help">Con esta clave gratuita los videos y audios de carpetas compartidas con enlace se reproducen con el reproductor propio de la web (pausa, parar y corte exacto en 1:50), sin el reproductor de Google Drive. Se crea en Google Cloud → APIs y servicios → Credenciales.</span></label>
           <label class="tick w6"><input type="checkbox" id="jLuces"><span>Mostrar las luces animadas sobre el fondo</span></label>
           <label class="tick w6"><input type="checkbox" id="jDownloadAudio"><span>Mostrar iconos de descarga a quienes compraron (y en carpetas públicas)</span></label>
           <label class="tick w6"><input type="checkbox" id="jUser"><span>Enviar correos al usuario (solicitud recibida y acceso activado)</span></label>
@@ -400,6 +401,6 @@
 
 <input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" hidden>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
-<script src="app.js?v=v4.11" defer></script>
+<script src="app.js?v=v4.12" defer></script>
 </body>
 </html>

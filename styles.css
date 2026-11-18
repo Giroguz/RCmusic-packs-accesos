@@ -776,3 +776,25 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 .mfail .row-center{gap:8px}
 @media (max-width:760px){ .dprot .dhint{font-size:11px;padding:6px 10px;justify-content:center;text-align:center} }
 #vFrame .mfail{position:absolute;inset:0;height:auto}
+
+/* v4.12 · reproductor de Drive protegido con barra propia (Parar, tiempo, pantalla completa).
+   La barra va debajo del video; los controles de Drive (volumen, configuración, adelantar) quedan fuera de la vista. */
+.dprot{--dc:56px;--db:52px}
+.dprot iframe{top:calc(-1 * var(--dc));height:calc(100% - var(--db) + 2 * var(--dc))}
+.dprot .dshield{bottom:var(--db)}
+.dprot .dhint{bottom:calc(var(--db) + 12px);white-space:normal;max-width:calc(100% - 24px);text-align:center}
+.dprot .dbar{position:absolute;left:0;right:0;bottom:0;height:var(--db);z-index:6;display:flex;align-items:center;gap:10px;padding:0 10px;background:#05070f;border-top:1px solid rgba(255,255,255,.06)}
+.dprot .dbar .dfs{position:static;width:40px;height:40px;background:transparent;margin-left:auto}
+.dbar-t{font:12px var(--f-mono);color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dbar-cd{font:12px var(--f-mono);color:var(--cyan);white-space:nowrap}
+.dbar-cd[hidden]{display:none}
+.mp-stop{width:36px;height:36px;flex:none;border-radius:50%;border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;background:rgba(255,255,255,.06);color:#fff;cursor:pointer}
+.mp-stop svg{width:13px;height:13px;fill:currentColor;stroke:none}
+.mp-stop:hover{background:rgba(255,255,255,.14)}
+@media (max-width:760px){
+  .dprot{--dc:76px}
+  .mp-stop{width:40px;height:40px}
+  .dbar-t{display:none}
+  .dprot .dhint{font-size:11px}
+}
+@media (max-height:520px) and (orientation:landscape){ .dprot{--db:46px} }

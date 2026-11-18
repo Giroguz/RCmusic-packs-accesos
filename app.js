@@ -56,6 +56,7 @@ const D = {
   preview: id => `https://drive.google.com/file/d/${id}/preview${au("?")}`,
   // Archivo directo (solo funciona si está abierto en Drive): lo reproduce el reproductor propio de la web
   stream: id => `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`,
+  api: (id, k) => `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&supportsAllDrives=true&key=${encodeURIComponent(k)}`,
   view:    id => `https://drive.google.com/file/d/${id}/view${au("?")}`,
   dl:      id => `https://drive.google.com/uc?export=download&confirm=t&id=${id}${au("&")}`,   // descarga directa, también archivos grandes
   folder:  id => `https://drive.google.com/drive/folders/${id}${au("?")}`,
@@ -73,7 +74,7 @@ function coverUrl(v){
 /* ---------- Formatos ---------- */
 const BOTONES_DEF = { todos:true, audio:true, video:true, software:true, herramientas:true, actualizaciones:true };
 const BOTONES_NOMBRES_DEF = { todos:"Todos", audio:"Audio", video:"Videos", software:"Software", herramientas:"Herramientas DJ", actualizaciones:"Actualizaciones" };
-let AJ = { whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true, botones:{ ...BOTONES_DEF }, nombresBotones:{ ...BOTONES_NOMBRES_DEF }, reproduccion:"todos" };
+let AJ = { claveVideo:"", whatsapp:"", moneda:CONFIG.moneda, fondo:"", luces:true, descargasCanciones:true, botones:{ ...BOTONES_DEF }, nombresBotones:{ ...BOTONES_NOMBRES_DEF }, reproduccion:"todos" };
 // Reproducción en la web (Ajustes): todos · compradores · nadie
 const reproDe = r => ["todos","compradores","nadie"].includes(r) ? r : "todos";
 const sinPlayer = () => AJ.reproduccion === "nadie";
@@ -277,7 +278,7 @@ async function demoApi(accion, d){
   };
   switch(accion){
     case "catalogo": { const aj = demoAj();
-      return { ok:true, v:4, ajustes:{ whatsapp:aj.whatsapp, moneda:aj.moneda, fondo:aj.fondo, luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:aj.botones, nombresBotones:nombresBotonesDe(aj.nombresBotones), reproduccion:reproDe(aj.reproduccion) },
+      return { ok:true, v:4, ajustes:{ whatsapp:aj.whatsapp, moneda:aj.moneda, fondo:aj.fondo, luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:aj.botones, nombresBotones:nombresBotonesDe(aj.nombresBotones), reproduccion:reproDe(aj.reproduccion), claveVideo:aj.claveVideo||"" },
         carpetas: vis.map(c => ({ ...c, visitantes:c.visitantes||"auto", libre:demoLibre(c), grande:!!window.__demoGrande, cantidad: DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0 })) }; }
     case "indice": { const packs = {}; vis.forEach(c => { if(DEMO_FILES[c.nombre] && !(window.__demoPend > 0)) packs[c.id] = demoVista(demoTree(c.nombre, DEMO_FILES[c.nombre], true), demoModo(c)); }); return { ok:true, packs }; }
     case "contenido": {
@@ -382,7 +383,7 @@ async function demoApi(accion, d){
     case "guardarAjustes": { tok(); const a = d.ajustes;
       if(a.correoAvisos && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.correoAvisos)) throw new Error("El correo para avisos no es válido.");
       if(a.sitio && !/^https:\/\//.test(a.sitio)) throw new Error("La dirección de la web debe empezar con https://");
-      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false, descargasCanciones:a.descargasCanciones!==false, botones:botonesDe(a.botones), nombresBotones:nombresBotonesDe(a.nombresBotones), reproduccion:reproDe(a.reproduccion) };
+      const aj = { correoAvisos:a.correoAvisos||"", whatsapp:String(a.whatsapp||"").replace(/\D/g,""), moneda:a.moneda||"S/", avisarUsuario:a.avisarUsuario!==false, sitio:a.sitio||"", fondo:a.fondo||"", luces:a.luces!==false, descargasCanciones:a.descargasCanciones!==false, botones:botonesDe(a.botones), nombresBotones:nombresBotonesDe(a.nombresBotones), reproduccion:reproDe(a.reproduccion), claveVideo:String(a.claveVideo||"").trim() };
       store.set(DK.aj, aj); return { ok:true, ajustes:aj }; }
     case "probarCorreo": tok(); throw new Error("En modo demostración no se envían correos. Conecta el servidor para probarlo.");
   }
@@ -399,7 +400,7 @@ const CK = { cat:"rc5_cat", idx:"rc5_idx", mail:"rc5_mail", user:"rc5_user", own
 function applyCatalog(r){
   CARP = r.carpetas || [];
   const aj = r.ajustes || {};
-  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:botonesDe(aj.botones), nombresBotones:nombresBotonesDe(aj.nombresBotones), reproduccion:reproDe(aj.reproduccion) };
+  AJ = { whatsapp:aj.whatsapp||"", moneda:aj.moneda||CONFIG.moneda, fondo:aj.fondo||"", luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:botonesDe(aj.botones), nombresBotones:nombresBotonesDe(aj.nombresBotones), reproduccion:reproDe(aj.reproduccion), claveVideo:String(aj.claveVideo||"") };
   if(sinPlayer() && typeof current !== "undefined" && current) stop();
   if(CAT && !catOn(CAT)) CAT = "";
   applyFondo(); renderCats(); renderPacks(); renderHome();
@@ -1012,8 +1013,17 @@ function play(f){
     // y si Drive ya lo preparó para su reproductor. Así se elige el mejor reproductor sin mostrar errores de Drive.
     const info = f.k === "v" ? await infoVideo(f) : null;
     if(!vigente()) return;
-    const sinDirecto = info && (NO_NAVEGADOR.includes(info.cont) || info.directo === "cuota" || info.directo === "no");
-    const r = sinDirecto ? { ok:false, detalle:"" } : await montarDirecto(f, box, seq, info && info.url);
+    const sinDirecto = !!(info && NO_NAVEGADOR.includes(info.cont));                      // formato que el navegador no lee
+    const sinEnlace = !!(info && (info.directo === "cuota" || info.directo === "no"));      // Google no entrega el enlace normal
+    // Fuentes directas, en orden: clave de API de Google (la más estable), enlace confirmado del servidor y enlace normal.
+    let r = { ok:false, detalle:"" };
+    if(!sinDirecto){
+      const fuentes = [];
+      if(AJ.claveVideo && !(info && /^no|^error/.test(info.api || ""))) fuentes.push(D.api(f.id, AJ.claveVideo));
+      if(info && info.url) fuentes.push(info.url);
+      else if(!sinEnlace) fuentes.push(D.stream(f.id));
+      for(const u of fuentes){ r = await montarDirecto(f, box, seq, u); if(r.ok || !vigente()) break; }
+    }
     if(r.ok || !vigente()) return;
     const detalle = detalleVideo(info, r);
     if(canDl(f)){ box.innerHTML = html; return; }
@@ -1067,6 +1077,17 @@ let playSeq = 0, directoMedia = null;
    pantalla completa de Drive y cualquier botón "Descargar". El teclado tampoco llega al reproductor de Drive
    (no se puede adelantar con las flechas). Al llegar a 1 min 50 s el reproductor se quita, como siempre. */
 let soltarGuardaFoco = null;
+// v4.12 · Botón "Parar": corta la vista previa (también la de Google Drive) y deja listo para verla otra vez.
+function pararVista(){
+  const f = current, esVideo = f && f.k === "v";
+  stop();
+  if(esVideo){
+    $("#vFrame").innerHTML = `<div class="mfail"><b>Vista previa detenida</b><div class="row-center"><button type="button" class="btn sm grad" data-replay>▶ Ver otra vez</button></div></div>`;
+    $("#vFrame [data-replay]").addEventListener("click", () => play(f));
+    $("#dockFrame").textContent = "";
+  }
+}
+const BTN_PARAR = `<button type="button" class="mp-stop" aria-label="Parar" title="Parar"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>`;
 /* v4.10 · Pantalla completa que funciona también en celulares: en Android usa la pantalla completa real y
    gira a horizontal; en iPhone (que no la permite fuera del reproductor nativo) el video ocupa toda la
    pantalla dentro de la web. En ambos casos sigue la capa de protección y el límite de 1 min 50 s. */
@@ -1085,8 +1106,9 @@ function montarDriveProtegido(f, box){
   box.innerHTML = `<div class="dprot"><span class="ldr"><i></i>Cargando desde Google Drive…</span>` +
     `<iframe src="${D.preview(f.id)}" allow="autoplay" loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>` +
     `<span class="dshield" tabindex="-1" aria-hidden="true"></span>` +
-    `<span class="dhint">Toca ▶ en el centro</span>` +
-    `<button type="button" class="dfs" aria-label="Pantalla completa"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>`;
+    `<span class="dhint">Toca el centro del video para reproducir o pausar</span>` +
+    `<div class="dbar">${BTN_PARAR}<span class="dbar-t">Toca el video: ▶ / ❚❚</span><span class="dbar-cd" data-preview-cd hidden></span>` +
+    `<button type="button" class="dfs" aria-label="Pantalla completa"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div></div>`;
   const w = box.querySelector(".dprot"), ifr = w.querySelector("iframe"), sh = w.querySelector(".dshield");
   if(soltarGuardaFoco) soltarGuardaFoco();
   // Cuando el foco entra al reproductor de Drive (al pulsar ▶), se le quita enseguida: el video sigue sonando,
@@ -1096,6 +1118,7 @@ function montarDriveProtegido(f, box){
   window.addEventListener("blur", guarda);
   soltarGuardaFoco = () => { window.removeEventListener("blur", guarda); soltarGuardaFoco = null; };
   w.querySelector(".dfs").addEventListener("click", () => pantallaCompleta(w));
+  w.querySelector(".mp-stop").addEventListener("click", () => { if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); pararVista(); });
   w.addEventListener("contextmenu", e => e.preventDefault());
 }
 function pararDirecto(){
@@ -1133,6 +1156,7 @@ function montarDirecto(f, box, seq, url){
 // Información del video desde el servidor (guardada mientras la página esté abierta). Si el servidor es
 // anterior a la 4.8 o tarda, se sigue como antes.
 const VIDEO_INFO = new Map();
+const WEB_V = "4.12";
 const NO_NAVEGADOR = ["mpeg","ts","avi","wmv","flv"];       // formatos que Chrome/Safari no reproducen directo
 function infoVideo(f){
   if(!f.id || isDemoId(f.id) || demoMode() || !F.c) return Promise.resolve(null);
@@ -1151,8 +1175,10 @@ function detalleVideo(info, r){
     if(info.size) d.push((info.size / 1048576).toFixed(info.size > 1e8 ? 0 : 1) + " MB");
     d.push("Drive " + (info.procesado ? "listo" : "sin procesar"));
     if(info.directo && info.directo !== "ok") d.push("directo: " + info.directo);
+    if(info.api) d.push("API: " + info.api);
   }
   if(r && r.detalle) d.push(r.detalle);
+  d.push("web " + WEB_V);
   return d.length ? "Detalle: " + d.join(" · ") : "";
 }
 function controlesDirectos(m, esVideo){
@@ -1160,7 +1186,7 @@ function controlesDirectos(m, esVideo){
   wrap.className = "mdirect" + (esVideo ? " video" : "");
   const bar = document.createElement("div");
   bar.className = "mplay";
-  bar.innerHTML = `<button type="button" class="mp-btn" aria-label="Pausar">${I.pause}</button><span class="mp-t">0:00</span>` +
+  bar.innerHTML = `<button type="button" class="mp-btn" aria-label="Pausar">${I.pause}</button>${BTN_PARAR}<span class="mp-t">0:00</span>` +
     `<input type="range" class="mp-bar" min="0" max="${lim}" step="0.1" value="0" aria-label="Posición de la vista previa"><span class="mp-d">${mmss(lim * 1000)}</span>` +
     (esVideo ? `<button type="button" class="mp-fs" aria-label="Pantalla completa"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>` : "");
   if(esVideo){ m.className = "mvideo"; wrap.append(m); }
@@ -1178,6 +1204,7 @@ function controlesDirectos(m, esVideo){
     t.textContent = mmss(m.currentTime * 1000);
   });
   ["play","pause","ended"].forEach(ev => m.addEventListener(ev, pinta));
+  bar.querySelector(".mp-stop").addEventListener("click", e => { e.stopPropagation(); if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); pararVista(); });
   if(esVideo){
     m.addEventListener("click", () => btn.click());
     bar.querySelector(".mp-fs").addEventListener("click", () => pantallaCompleta(wrap));
@@ -1641,7 +1668,7 @@ const J = { fondo:"" };
 function fillAjustes(){
   if(J.dirty) return; // no borrar cambios mientras se edita por un refresco automático
   $("#jMail").value = A.aj.correoAvisos || ""; $("#jWa").value = A.aj.whatsapp || ""; $("#jSite").value = A.aj.sitio || "";
-  $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false; $("#jDownloadAudio").checked = A.aj.descargasCanciones !== false;
+  $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false; $("#jDownloadAudio").checked = A.aj.descargasCanciones !== false; $("#jClaveVideo").value = A.aj.claveVideo || "";
   const bt = botonesDe(A.aj.botones); $$("[data-boton]").forEach(i => i.checked = bt[i.dataset.boton]); const bn = nombresBotonesDe(A.aj.nombresBotones); $$(`[data-boton-nombre]`).forEach(i => i.value = bn[i.dataset.botonNombre]);
   $("#jRepro").value = reproDe(A.aj.reproduccion); paintReproHelp();
   J.fondo = A.aj.fondo || ""; paintFondoPrev();
@@ -1666,7 +1693,7 @@ async function saveAjustes(e){
   try{
     const r = await adminCall("guardarAjustes", { ajustes:{ correoAvisos:$("#jMail").value.trim(), whatsapp:$("#jWa").value, sitio:$("#jSite").value.trim(),
       moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked, descargasCanciones:$("#jDownloadAudio").checked,
-      botones:Object.fromEntries($$("[data-boton]").map(i => [i.dataset.boton, i.checked])), nombresBotones:Object.fromEntries($$(`[data-boton-nombre]`).map(i => [i.dataset.botonNombre, i.value.trim()])), reproduccion:$("#jRepro").value } });
+      botones:Object.fromEntries($$("[data-boton]").map(i => [i.dataset.boton, i.checked])), nombresBotones:Object.fromEntries($$(`[data-boton-nombre]`).map(i => [i.dataset.botonNombre, i.value.trim()])), reproduccion:$("#jRepro").value, claveVideo:$("#jClaveVideo").value.trim() } });
     A.aj = r.ajustes; J.dirty = false;
     applyCatalog({ carpetas:CARP, ajustes:r.ajustes });
     store.set(CK.cat, { t:Date.now(), v:{ carpetas:CARP, ajustes:r.ajustes } });
