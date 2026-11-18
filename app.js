@@ -490,8 +490,8 @@ function renderPacks(){
                 : st==="req" ? `<span class="badge-st req">Solicitud enviada</span>`
                 : free ? `<span class="badge-st free">Pack gratuito</span>`
                 : lib===2 ? `<span class="badge-st free">Escucha y descarga libre</span>` : lib===1 ? `<span class="badge-st free">Escucha libre</span>` : "";
-    const foot = st==="own" ? `<button type="button" class="btn grad sm" data-pack="${esc(c.id)}">${sinPlayer() ? "Abrir" : "Abrir y reproducir"}</button>`
-               : `<button type="button" class="btn light sm" data-pack="${esc(c.id)}">${lib ? (/video/i.test(c.tipo) ? "Ver y reproducir" : "Escuchar") : "Ver contenido"}</button>` +
+    const foot = st==="own" ? `<button type="button" class="btn grad sm" data-pack="${esc(c.id)}">Ver contenido</button>`
+               : `<button type="button" class="btn light sm" data-pack="${esc(c.id)}">Ver contenido</button>` +
                  (free ? "" : st==="req" ? `<button type="button" class="btn sm done" disabled>Solicitado</button>`
                              : `<button type="button" class="btn sm" data-buy="${esc(c.id)}">Comprar</button>`);
     return `<article class="pack" data-prefetch="${esc(c.id)}">
@@ -1047,6 +1047,20 @@ let playSeq = 0, directoMedia = null;
    pantalla completa de Drive y cualquier botón "Descargar". El teclado tampoco llega al reproductor de Drive
    (no se puede adelantar con las flechas). Al llegar a 1 min 50 s el reproductor se quita, como siempre. */
 let soltarGuardaFoco = null;
+/* v4.10 · Pantalla completa que funciona también en celulares: en Android usa la pantalla completa real y
+   gira a horizontal; en iPhone (que no la permite fuera del reproductor nativo) el video ocupa toda la
+   pantalla dentro de la web. En ambos casos sigue la capa de protección y el límite de 1 min 50 s. */
+function pantallaCompleta(w){
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  if(fsEl){ try{ screen.orientation.unlock(); }catch(_){} (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+  if(w.classList.contains("pseudo-fs")){ w.classList.remove("pseudo-fs"); return; }
+  const req = w.requestFullscreen || w.webkitRequestFullscreen;
+  const simular = () => w.classList.add("pseudo-fs");
+  if(!req){ simular(); return; }
+  try{
+    Promise.resolve(req.call(w)).then(() => { try{ screen.orientation.lock("landscape").catch(() => {}); }catch(_){} }).catch(simular);
+  }catch(_){ simular(); }
+}
 function montarDriveProtegido(f, box){
   box.innerHTML = `<div class="dprot"><span class="ldr"><i></i>Cargando desde Google Drive…</span>` +
     `<iframe src="${D.preview(f.id)}" allow="autoplay" loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>` +
@@ -1060,7 +1074,7 @@ function montarDriveProtegido(f, box){
   const guarda = () => setTimeout(() => { if(document.activeElement === ifr && document.contains(ifr)) sh.focus({ preventScroll:true }); }, 80);
   window.addEventListener("blur", guarda);
   soltarGuardaFoco = () => { window.removeEventListener("blur", guarda); soltarGuardaFoco = null; };
-  w.querySelector(".dfs").addEventListener("click", () => { (document.fullscreenElement ? document.exitFullscreen() : (w.requestFullscreen || w.webkitRequestFullscreen || (() => Promise.reject())).call(w)).catch?.(() => {}); });
+  w.querySelector(".dfs").addEventListener("click", () => pantallaCompleta(w));
   w.addEventListener("contextmenu", e => e.preventDefault());
 }
 function pararDirecto(){
@@ -1115,7 +1129,7 @@ function controlesDirectos(m, esVideo){
   ["play","pause","ended"].forEach(ev => m.addEventListener(ev, pinta));
   if(esVideo){
     m.addEventListener("click", () => btn.click());
-    bar.querySelector(".mp-fs").addEventListener("click", () => { const el = wrap; (document.fullscreenElement ? document.exitFullscreen() : (el.requestFullscreen || el.webkitRequestFullscreen || (() => Promise.reject())).call(el)).catch?.(() => {}); });
+    bar.querySelector(".mp-fs").addEventListener("click", () => pantallaCompleta(wrap));
   }
   wrap.addEventListener("contextmenu", e => e.preventDefault());
   return wrap;

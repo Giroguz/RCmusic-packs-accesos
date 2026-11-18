@@ -731,3 +731,39 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 .dprot .dfs svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
 .dprot:fullscreen{background:#000}
 .dprot::after{content:"";position:absolute;top:0;right:0;width:64px;height:56px;z-index:2;background:#000;pointer-events:none}
+
+/* v4.10 · vista previa de videos en celulares */
+.pseudo-fs{position:fixed!important;inset:0!important;z-index:200!important;width:100vw!important;height:100dvh!important;background:#000}
+.mdirect:-webkit-full-screen,.dprot:-webkit-full-screen{width:100%;height:100%;background:#000}
+@media (max-width:760px){
+  .video-sheet .shead{padding:10px 12px}
+  .video-sheet .shead h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;font-size:14px;line-height:1.25}
+  /* el video conserva su 16:9 completo y la barra de controles va aparte, debajo */
+  #vFrame{aspect-ratio:auto;height:calc(100vw * 9 / 16 + 52px);max-height:62dvh;padding:0}
+  .mplay{gap:8px;padding:0 10px}
+  .mplay .mp-btn{width:40px;height:40px}
+  .mplay .mp-fs{width:40px;height:40px}
+  .mplay .mp-bar{height:28px}
+  .dprot .dhint{font-size:10.5px;padding:10px 54px 12px 10px;justify-content:flex-start;text-align:left}
+  .dprot .dfs{width:40px;height:40px;right:6px;bottom:6px}
+  .video-sheet .row-split.pad{padding:10px 12px 14px;gap:4px 10px}
+  #vMeta{font-size:11.5px}
+  #vMeta + .preview-cd{margin:0}
+  .video-sheet .row-end{width:100%}
+  .video-sheet .row-end .btn{flex:1}
+  #vNote{font-size:12px}
+}
+/* celular en horizontal: el video ocupa toda la pantalla */
+@media (max-height:520px) and (orientation:landscape){
+  #vModal{padding:0;align-items:stretch}
+  #vModal .sheet{width:100%!important;height:100dvh;max-height:100dvh;border-radius:0;border:0;display:flex;flex-direction:column;overflow:hidden}
+  #vModal .shead{padding:5px 10px;border-bottom:0}
+  #vModal .shead h3{font-size:13px;white-space:nowrap;display:block}
+  #vModal .shead .minimize-float,#vModal .shead [data-close]{width:30px;height:30px;min-width:30px}
+  #vFrame{flex:1;min-height:0;aspect-ratio:auto;height:auto;max-height:none;padding:0}
+  #vModal .row-split.pad{padding:4px 12px;flex-wrap:nowrap}
+  #vModal .row-end,#vNote{display:none}
+  .mdirect.video .mplay{height:46px}
+}
+/* el contenedor del reproductor propio no hereda el relleno de .video (barra y video a todo el ancho) */
+.mdirect.video{padding:0;aspect-ratio:auto;align-items:stretch;justify-items:stretch}
