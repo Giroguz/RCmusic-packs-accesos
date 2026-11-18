@@ -100,8 +100,24 @@ function perLabel(c){
   return m === "Mensual" ? "Mensual" : m === "Anual" ? "Anual" : m === "Personalizado" ? `Por ${plural(mesesDe(c))}` : "Pago único";
 }
 const perClass = c => (c.modalidad || "Único") === "Único" ? "per once" : "per";
+const usd = c => Number(c && c.precioUsd) > 0 ? `US$ ${Number(c.precioUsd).toFixed(2)}` : "";
 const priceBlock = c => { const free = !(Number(c.precio) > 0);
-  return `<div class="pp"><strong class="amt${free?" free":""}">${free ? "Gratis" : esc(money(c.precio))}</strong>${free ? "" : `<span class="${perClass(c)}">${esc(perLabel(c))}</span>`}</div>`; };
+  return `<div class="pp"><strong class="amt${free?" free":""}">${free ? "Gratis" : esc(money(c.precio))}</strong>${free ? "" : `<span class="${perClass(c)}">${esc(perLabel(c))}</span>`}</div>` +
+    (!free && usd(c) ? `<div class="usd">${esc(usd(c))}</div>` : "") + pagosHtml(c); };
+/* v5.0 · Formas de pago por pack (hasta 3 enlaces). El logo es el ícono oficial del sitio del enlace
+   (lo entrega Google a partir del dominio), así se ve el logo de PayPal, Mercado Pago, etc. sin dibujarlo. */
+const PAGO_NOMBRES = [[/paypal\./,"PayPal"],[/mercadopago\.|mpago\.la/,"Mercado Pago"],[/binance\./,"Binance"],[/stripe\./,"Stripe"],[/hotmart\./,"Hotmart"],
+  [/izipay\./,"Izipay"],[/culqi\./,"Culqi"],[/niubiz\./,"Niubiz"],[/wise\./,"Wise"],[/payoneer\./,"Payoneer"],[/ko-fi\./,"Ko-fi"],[/buymeacoffee\./,"Buy Me a Coffee"],
+  [/yape\./,"Yape"],[/plin\./,"Plin"],[/wa\.me|whatsapp\./,"WhatsApp"],[/payhip\./,"Payhip"],[/gumroad\./,"Gumroad"],[/lemonsqueezy\./,"Lemon Squeezy"]];
+const hostDe = u => { try{ return new URL(u).hostname.replace(/^www\./,""); }catch(_){ return ""; } };
+const nombrePago = p => (p.n || "").trim() || (PAGO_NOMBRES.find(([r]) => r.test(hostDe(p.u))) || [, hostDe(p.u) || "Pago"])[1];
+const logoPago = u => { const h = hostDe(u); return h ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64` : ""; };
+function pagosHtml(c, grande){
+  const ps = (c && c.pagos || []).filter(p => p && /^https:\/\//i.test(p.u || ""));
+  if(!ps.length || !(Number(c.precio) > 0 || Number(c.precioUsd) > 0)) return "";
+  return `<div class="pagos${grande ? " lg" : ""}"><span class="pagos-t">Paga con</span>` + ps.map(p => { const n = nombrePago(p), l = logoPago(p.u);
+    return `<a class="pago" href="${esc(p.u)}" target="_blank" rel="noopener nofollow" title="Pagar con ${esc(n)}" aria-label="Pagar con ${esc(n)}">${l ? `<img src="${esc(l)}" alt="" loading="lazy" width="20" height="20">` : ""}<span>${esc(n)}</span></a>`; }).join("") + `</div>`;
+}
 const priceTxt = c => Number(c.precio) > 0 ? `${money(c.precio)}${periodo(c,true) ? " " + periodo(c,true) : ""}` : "Gratis";
 const durTxt = c => mesesDe(c) ? `Acceso por ${plural(mesesDe(c))}` : "Acceso sin vencimiento";
 const fechaCorta = s => { const d = new Date(s); return isNaN(d) ? "" : d.toLocaleDateString("es-PE",{day:"2-digit",month:"short",year:"numeric"}); };
@@ -279,7 +295,7 @@ async function demoApi(accion, d){
   switch(accion){
     case "catalogo": { const aj = demoAj();
       return { ok:true, v:4, ajustes:{ whatsapp:aj.whatsapp, moneda:aj.moneda, fondo:aj.fondo, luces:aj.luces!==false, descargasCanciones:aj.descargasCanciones!==false, botones:aj.botones, nombresBotones:nombresBotonesDe(aj.nombresBotones), reproduccion:reproDe(aj.reproduccion), claveVideo:aj.claveVideo||"" },
-        carpetas: vis.map(c => ({ ...c, visitantes:c.visitantes||"auto", libre:demoLibre(c), grande:!!window.__demoGrande, cantidad: DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0 })) }; }
+        carpetas: vis.map(c => ({ ...c, pagos:(c.pagos||[]).filter(p => p && p.v && p.u).map(p => ({ n:p.n, u:p.u })), visitantes:c.visitantes||"auto", libre:demoLibre(c), grande:!!window.__demoGrande, cantidad: DEMO_FILES[c.nombre] ? countTree(demoTree(c.nombre, DEMO_FILES[c.nombre])) : 0 })) }; }
     case "indice": { const packs = {}; vis.forEach(c => { if(DEMO_FILES[c.nombre] && !(window.__demoPend > 0)) packs[c.id] = demoVista(demoTree(c.nombre, DEMO_FILES[c.nombre], true), demoModo(c)); }); return { ok:true, packs }; }
     case "contenido": {
       const c = cars.find(x=>x.id===d.id); if(!c) throw new Error("Este pack ya no está disponible.");
@@ -375,7 +391,8 @@ async function demoApi(accion, d){
       let meses = MODS[mod];
       if(meses == null){ meses = Math.round(Number(c.meses)||0); if(meses<1||meses>120) throw new Error("Para la modalidad personalizada escribe de 1 a 120 meses."); }
       const row = { nombre:c.nombre.trim(), descripcion:c.descripcion||"", precio:Math.max(0, Number(c.precio)||0), portada:c.portada||"", drive:driveId(c.drive),
-        tipo:c.tipo||"Video", orden:Number(c.orden)||cars.length+1, visible:c.visible!==false, modalidad:mod, meses, visitantes:c.visitantes||"auto" };
+        tipo:c.tipo||"Video", orden:Number(c.orden)||cars.length+1, visible:c.visible!==false, modalidad:mod, meses, visitantes:c.visitantes||"auto",
+        precioUsd:Math.max(0, Number(c.precioUsd)||0), pagos:(c.pagos||[]).slice(0,3) };
       if(c.id) Object.assign(cars.find(x=>x.id===c.id), row); else cars.push({ id:"c"+Date.now().toString(36), ...row });
       saveC(); return { ok:true }; }
     case "eliminarCarpeta": tok(); store.set(DK.car, cars.filter(x=>x.id!==d.id)); return { ok:true };
@@ -534,6 +551,8 @@ async function openPack(id, push){
     $(p).textContent = perLabel(c); $(p).className = perClass(c);
   });
   $("#fPriceNote").textContent = free ? "Pack gratuito" : durTxt(c) + (mesesDe(c) ? " · renovable" : "");
+  $("#fUsd").textContent = free ? "" : usd(c); $("#fUsd").hidden = free || !usd(c);
+  $("#fPagos").innerHTML = pagosHtml(c, true);
   $("#bbNote").textContent = free ? "Pack gratuito" : durTxt(c);
   paintPackState();
   if(push){ try{ history.pushState({__rcModal:"fModal",__rcPrevUrl:location.href},"","#pack-"+slug(c.nombre)); }catch(_){} }
@@ -1156,7 +1175,7 @@ function montarDirecto(f, box, seq, url){
 // Información del video desde el servidor (guardada mientras la página esté abierta). Si el servidor es
 // anterior a la 4.8 o tarda, se sigue como antes.
 const VIDEO_INFO = new Map();
-const WEB_V = "4.12";
+const WEB_V = "5.0";
 const NO_NAVEGADOR = ["mpeg","ts","avi","wmv","flv"];       // formatos que Chrome/Safari no reproducen directo
 function infoVideo(f){
   if(!f.id || isDemoId(f.id) || demoMode() || !F.c) return Promise.resolve(null);
@@ -1601,9 +1620,19 @@ function carForm(c){
       <div class="form">
         <label class="w6">Nombre<input data-f="nombre" value="${esc(c.nombre||"")}" maxlength="80"></label>
         <label class="w2">Precio<span class="money"><b>${esc(AJ.moneda||CONFIG.moneda)}</b><input data-f="precio" type="number" min="0" step="0.5" value="${esc(c.precio ?? 0)}" aria-label="Precio"></span><span class="help">0 = Gratis</span></label>
+        <label class="w2">Precio en dólares<span class="money"><b>US$</b><input data-f="precioUsd" type="number" min="0" step="0.5" value="${esc(c.precioUsd || "")}" placeholder="0" aria-label="Precio en dólares"></span><span class="help">Opcional · vacío = no se muestra</span></label>
         <label class="w2">Modalidad de pago<select data-f="modalidad">${Object.keys(MODS).map(m=>`<option value="${m}" ${m===mod?"selected":""}>${{"Único":"Pago único","Mensual":"Mensual (1 mes)","Anual":"Anual (12 meses)","Personalizado":"Personalizado (meses)"}[m]}</option>`).join("")}</select></label>
         <label class="w2" data-mesbox ${mod!=="Personalizado"?"hidden":""}>Duración en meses<input data-f="meses" type="number" min="1" max="120" value="${esc(mod==="Personalizado" ? (c.meses||3) : 3)}"></label>
         <label class="w6">Descripción<textarea data-f="descripcion" maxlength="400">${esc(c.descripcion||"")}</textarea></label>
+        <fieldset class="w6 pagos-edit"><legend>Formas de pago (enlaces) · marca las que quieres mostrar en este pack</legend>
+          ${[0,1,2].map(i => { const p = (c.pagos || [])[i] || {}; return `<div class="pago-row" data-pago="${i}">
+            <label class="tick" title="Mostrar en el anuncio"><input type="checkbox" data-pago-v ${p.v ? "checked" : ""}><span>Mostrar</span></label>
+            <span class="pago-logo">${p.u ? `<img src="${esc(logoPago(p.u))}" alt="">` : ""}</span>
+            <input data-pago-n value="${esc(p.n||"")}" maxlength="30" placeholder="Nombre (opcional)" aria-label="Nombre de la forma de pago ${i+1}">
+            <input data-pago-u value="${esc(p.u||"")}" maxlength="500" placeholder="https://… enlace de pago ${i+1}" inputmode="url" aria-label="Enlace de pago ${i+1}">
+          </div>`; }).join("")}
+          <span class="help">Pega el enlace de pago (PayPal, Mercado Pago, Binance, Stripe, Izipay…). El logo aparece solo, tomado del sitio del enlace. Si el nombre queda vacío se pone automáticamente.</span>
+        </fieldset>
         <label class="w2">Tipo (botón de inicio)<select data-f="tipo">${TIPOS.map(([t,l])=>`<option value="${t}" ${t===(c.tipo||"Audio")?"selected":""}>${l}</option>`).join("")}</select></label>
         <label class="w2">Orden<input data-f="orden" type="number" min="1" value="${esc(c.orden || A.cars.length+1)}"></label>
         <label class="tick w2" style="align-self:end;padding-bottom:12px"><input type="checkbox" data-f="visible" ${c.visible!==false?"checked":""}><span>Visible en la web</span></label>
@@ -1624,7 +1653,7 @@ function renderCars(){
       <div class="cn"><b>${esc(c.nombre)}</b><span>${esc(c.tipo || "")} · ${esc(c.drive ? (c.descripcion || "Carpeta de Drive conectada") : "Falta conectar la carpeta de Drive")}</span>
         <span class="vis-row"><span class="pill ${VISIT_PILL[visDe(c.visitantes)][1]}">${VISIT_PILL[visDe(c.visitantes)][0]}</span>${c.publica ? `<span class="dim">En Drive: cualquier persona con el enlace</span>` : c.drive ? `<span class="dim">En Drive: privada</span>` : ""}</span></div>
       <span class="num c-tipo">${n != null ? fmtNum(n) : "—"}</span>
-      <span class="num c-precio" style="color:var(--ink)">${esc(money(c.precio))}<br><span class="dim">${esc(Number(c.precio)>0 ? periodo(c) : "")}</span></span>
+      <span class="num c-precio" style="color:var(--ink)">${esc(money(c.precio))}${usd(c) ? `<br><span class="dim">${esc(usd(c))}</span>` : ""}<br><span class="dim">${esc(Number(c.precio)>0 ? periodo(c) : "")}</span></span>
       <span class="c-vis"><span class="pill ${c.visible!==false?"si":"no"}">${c.visible!==false?"Visible":"Oculta"}</span></span>
       <div class="ra"><button type="button" class="btn sm" data-act="carEdit" data-id="${id}">Editar</button>
         <button type="button" class="btn sm bad${A.armed==="c:"+c.id?" armed":""}" data-act="carDel" data-id="${id}">${A.armed==="c:"+c.id?"¿Eliminar?":"Eliminar"}</button></div>
@@ -1664,9 +1693,13 @@ async function uploadImage(file){
 }
 
 /* ---------- Ajustes ---------- */
-const J = { fondo:"" };
+const J = { fondo:"", listo:false };
 function fillAjustes(){
-  if(J.dirty) return; // no borrar cambios mientras se edita por un refresco automático
+  // No borrar cambios mientras se edita por un refresco automático... salvo la primera vez: si se escribió
+  // en el formulario antes de que llegaran los ajustes, igual se cargan (si no, al guardar se apagaban los
+  // botones de categoría y se vaciaban los demás campos). Solo se conserva la clave que se haya pegado.
+  if(J.dirty && J.listo) return;
+  const claveEscrita = J.dirty ? $("#jClaveVideo").value.trim() : "";
   $("#jMail").value = A.aj.correoAvisos || ""; $("#jWa").value = A.aj.whatsapp || ""; $("#jSite").value = A.aj.sitio || "";
   $("#jMon").value = A.aj.moneda || CONFIG.moneda; $("#jUser").checked = A.aj.avisarUsuario !== false; $("#jLuces").checked = A.aj.luces !== false; $("#jDownloadAudio").checked = A.aj.descargasCanciones !== false; $("#jClaveVideo").value = A.aj.claveVideo || "";
   const bt = botonesDe(A.aj.botones); $$("[data-boton]").forEach(i => i.checked = bt[i.dataset.boton]); const bn = nombresBotonesDe(A.aj.nombresBotones); $$(`[data-boton-nombre]`).forEach(i => i.value = bn[i.dataset.botonNombre]);
@@ -1675,6 +1708,8 @@ function fillAjustes(){
   const tot = Object.values(A.conteos||{}).reduce((t,n)=>t+(Number(n)||0),0);
   $("#jIdx").textContent = A.indexado ? `${fmtNum(tot)} archivos en el último índice. Los cambios de Drive (archivos y permisos) se revisan cada 10 minutos; las carpetas que se abren en la web se leen de Drive en el momento.` : "Aún no hay índice: se prepara solo en los próximos minutos.";
   $("#jQuota").textContent = A.cuota != null ? `Correos disponibles hoy en tu cuenta de Google: ${A.cuota}.` : "";
+  if(claveEscrita) $("#jClaveVideo").value = claveEscrita;
+  J.listo = true;
 }
 const REPRO_HELP = {
   todos:"Carpetas públicas en Drive: todos reproducen y descargan. Carpetas privadas: todos escuchan 1 min 50 s de cada audio; descargan solo quienes tienen acceso. No se cambian permisos de Drive.",
@@ -1689,7 +1724,9 @@ function paintFondoPrev(){
 }
 async function saveAjustes(e){
   e.preventDefault();
-  const err = $("#jErr"), b = $("#jSave"); err.textContent = ""; busy(b, true);
+  const err = $("#jErr"), b = $("#jSave"); err.textContent = "";
+  if(!J.listo){ err.textContent = "Espera unos segundos a que carguen los ajustes actuales y vuelve a pulsar Guardar."; return; }
+  busy(b, true);
   try{
     const r = await adminCall("guardarAjustes", { ajustes:{ correoAvisos:$("#jMail").value.trim(), whatsapp:$("#jWa").value, sitio:$("#jSite").value.trim(),
       moneda:$("#jMon").value.trim(), avisarUsuario:$("#jUser").checked, fondo:J.fondo, luces:$("#jLuces").checked, descargasCanciones:$("#jDownloadAudio").checked,
@@ -1757,7 +1794,10 @@ async function adminAction(btn){
       toast("Datos guardados.", "ok"); A.editReg = null;
     } else if(act === "carSave"){
       const v = readPanel(panel);
-      const r = await adminCall("guardarCarpeta", { carpeta:{ id, nombre:v.nombre, descripcion:v.descripcion, precio:v.precio, modalidad:v.modalidad, meses:v.meses, tipo:v.tipo, orden:v.orden, visible:v.visible, drive:v.drive, portada:E.portada, visitantes:v.visitantes } });
+      const pagos = [...panel.querySelectorAll("[data-pago]")].map(r => ({ v:r.querySelector("[data-pago-v]").checked, n:r.querySelector("[data-pago-n]").value.trim(), u:r.querySelector("[data-pago-u]").value.trim() }));
+      const malo = pagos.findIndex(p => p.u && !/^https:\/\/\S+$/i.test(p.u));
+      if(malo >= 0){ const e = panel.querySelector("[data-err]"); if(e) e.textContent = `El enlace de pago ${malo + 1} debe empezar con https://`; busy(btn, false); return; }
+      const r = await adminCall("guardarCarpeta", { carpeta:{ id, nombre:v.nombre, descripcion:v.descripcion, precio:v.precio, precioUsd:v.precioUsd, modalidad:v.modalidad, meses:v.meses, tipo:v.tipo, orden:v.orden, visible:v.visible, drive:v.drive, portada:E.portada, visitantes:v.visitantes, pagos } });
       toast((r.indexado ? "Carpeta guardada y contenido actualizado." : r.pendiente ? "Carpeta guardada. El último índice válido se conserva." : "Carpeta guardada.") + " Los permisos de Drive no se modificaron.", "ok"); A.editCar = null;
       loadCatalog(true); loadIndex(true);
     } else if(act === "carDel"){
@@ -1950,6 +1990,13 @@ function bind(){
   $$("#segEst button").forEach(b => b.addEventListener("click", () => { A.est = b.dataset.est; $$("#segEst button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderRegs(); }));
   $$("#segSol button").forEach(b => b.addEventListener("click", () => { A.solF = b.dataset.sol; $$("#segSol button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderSols(); }));
   $("#ajForm").addEventListener("input", () => { J.dirty = true; });
+  // Logo de la forma de pago: se actualiza al pegar el enlace
+  document.addEventListener("input", e => {
+    const u = e.target.closest && e.target.closest("[data-pago-u]"); if(!u) return;
+    const box = u.closest("[data-pago]").querySelector(".pago-logo"), l = /^https:\/\/\S+$/i.test(u.value.trim()) ? logoPago(u.value.trim()) : "";
+    box.innerHTML = l ? `<img src="${esc(l)}" alt="">` : "";
+    const chk = u.closest("[data-pago]").querySelector("[data-pago-v]"); if(l && !u.dataset.tocado){ chk.checked = true; u.dataset.tocado = "1"; }
+  });
   $("#ajForm").addEventListener("change", e => { J.dirty = true; if(e.target.id === "jRepro") paintReproHelp(); });
   $("#ajForm").addEventListener("submit", saveAjustes);
   $("#jTest").addEventListener("click", async () => { const b = $("#jTest"); $("#jErr").textContent = ""; busy(b, true);

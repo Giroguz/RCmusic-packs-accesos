@@ -798,3 +798,42 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
   .dprot .dhint{font-size:11px}
 }
 @media (max-height:520px) and (orientation:landscape){ .dprot{--db:46px} }
+
+/* v5.0 · precio en dólares y formas de pago */
+.usd{font:600 13px var(--f-mono);color:var(--mute);margin-top:2px;letter-spacing:.02em}
+.pprice + .usd{font-size:14px;margin-top:4px}
+.pagos{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
+.pagos-t{font:11px var(--f-mono);color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+.pago{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 6px;border-radius:999px;background:#fff;color:#111;font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.2);transition:transform .15s var(--ease),box-shadow .15s}
+.pago img{width:20px;height:20px;border-radius:4px;object-fit:contain;flex:none}
+.pago:hover{transform:translateY(-1px);box-shadow:0 6px 16px -6px rgba(47,216,230,.5)}
+.pagos.lg{margin:12px 0 4px}
+.pagos.lg .pago{height:38px;padding:0 14px 0 8px;font-size:13.5px}
+.pagos.lg .pago img{width:24px;height:24px}
+.pagos-edit{border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;display:grid;gap:8px;min-width:0}
+.pagos-edit legend{padding:0 6px;font-size:12.5px;color:var(--mute)}
+.pago-row{display:grid;grid-template-columns:auto 28px minmax(90px,.6fr) minmax(0,1.6fr);gap:8px;align-items:center}
+.pago-row .tick{margin:0;white-space:nowrap}
+.pago-logo{width:28px;height:28px;border-radius:7px;background:#fff;display:grid;place-items:center;overflow:hidden}
+.pago-logo:empty{background:rgba(255,255,255,.06)}
+.pago-logo img{width:22px;height:22px;object-fit:contain}
+.pago-row input:not([type=checkbox]){min-width:0;width:100%}
+@media (max-width:600px){
+  .pago-row{grid-template-columns:auto 28px 1fr}
+  .pago-row [data-pago-u]{grid-column:1 / -1}
+  .pagos .pago{height:28px;font-size:11.5px}
+}
+@media (max-width:760px){
+  .pack .pagos-t{display:none}
+  .pack .pago span{display:none}
+  .pack .pago{width:32px;height:32px;padding:0;justify-content:center}
+}
+
+/* v5.0 · borde resaltado en cada anuncio (degradado de la marca, con brillo al pasar el mouse) */
+.pack{border-color:transparent;box-shadow:0 0 0 1px rgba(47,216,230,.10),0 14px 34px -22px rgba(91,92,240,.55)}
+.pack::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:4;
+  background:linear-gradient(140deg,#2fd8e6,#5b5cf0 50%,#d12fd0);opacity:.7;transition:opacity .25s;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.pack:hover{border-color:transparent;box-shadow:0 0 0 1px rgba(47,216,230,.25),0 0 22px -4px rgba(47,216,230,.35),0 18px 44px -20px rgba(209,47,208,.55)}
+.pack:hover::before{opacity:1}
+@media (prefers-reduced-motion:reduce){ .pack::before{transition:none} }
