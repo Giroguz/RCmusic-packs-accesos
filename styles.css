@@ -730,7 +730,6 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 .dprot .dfs{position:absolute;right:8px;bottom:8px;z-index:5;width:34px;height:34px;border:0;border-radius:8px;display:grid;place-items:center;background:rgba(5,7,15,.6);color:var(--ink);cursor:pointer}
 .dprot .dfs svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
 .dprot:fullscreen{background:#000}
-.dprot::after{content:"";position:absolute;top:0;right:0;width:64px;height:56px;z-index:2;background:#000;pointer-events:none}
 
 /* v4.10 · vista previa de videos en celulares */
 .pseudo-fs{position:fixed!important;inset:0!important;z-index:200!important;width:100vw!important;height:100dvh!important;background:#000}
@@ -767,3 +766,13 @@ code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px 
 }
 /* el contenedor del reproductor propio no hereda el relleno de .video (barra y video a todo el ancho) */
 .mdirect.video{padding:0;aspect-ratio:auto;align-items:stretch;justify-items:stretch}
+
+/* v4.11 · reproductor de Drive recortado: su barra superior (en celulares, la de adelantar), el botón de abrir
+   en otra ventana y su barra inferior quedan fuera de la vista; solo se ve el video. */
+.dprot iframe{top:-56px;height:calc(100% + 112px)}
+.dprot .dhint{left:50%;right:auto;bottom:12px;transform:translateX(-50%);min-height:0;padding:6px 12px;border-radius:999px;background:rgba(5,7,15,.82);color:var(--ink);white-space:nowrap;transition:opacity .4s}
+.dprot.tocado .dhint{opacity:0}
+.mfail .mdet{display:block;max-width:520px;font:11px var(--f-mono);color:var(--mute);opacity:.75;word-break:break-word}
+.mfail .row-center{gap:8px}
+@media (max-width:760px){ .dprot .dhint{font-size:11px;padding:6px 10px;justify-content:center;text-align:center} }
+#vFrame .mfail{position:absolute;inset:0;height:auto}

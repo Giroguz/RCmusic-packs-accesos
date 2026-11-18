@@ -1002,14 +1002,34 @@ function play(f){
   // público o Drive no lo entrega directo, se usa el reproductor de Google Drive.
   // Quien puede descargar usa el reproductor de Drive como respaldo. Quien no, NO: ese reproductor deja
   // adelantar más allá de 1:50 y, si falla, muestra su propio botón "Descargar".
-  const conRespaldo = (box, html) => montarDirecto(f, box, seq).then(r => {
-    if(r.ok || seq !== playSeq || !current || fkey(current) !== fkey(f)) return;
+  const vigente = () => seq === playSeq && current && fkey(current) === fkey(f);
+  const falla = (box, titulo, texto, detalle, extra) => {
+    box.innerHTML = `<div class="mfail"><b>${titulo}</b><span>${texto}</span>${detalle ? `<small class="mdet">${esc(detalle)}</small>` : ""}<div class="row-center">${extra || ""}<button type="button" class="btn sm" data-replay>Reintentar</button></div></div>`;
+    box.querySelector("[data-replay]").addEventListener("click", () => { current = null; VIDEO_INFO.delete(f.id); play(f); });
+  };
+  const conRespaldo = async (box, html) => {
+    // v4.11 · Los videos se revisan primero en el servidor: formato real, si Google entrega el archivo directo
+    // y si Drive ya lo preparó para su reproductor. Así se elige el mejor reproductor sin mostrar errores de Drive.
+    const info = f.k === "v" ? await infoVideo(f) : null;
+    if(!vigente()) return;
+    const sinDirecto = info && (NO_NAVEGADOR.includes(info.cont) || info.directo === "cuota" || info.directo === "no");
+    const r = sinDirecto ? { ok:false, detalle:"" } : await montarDirecto(f, box, seq, info && info.url);
+    if(r.ok || !vigente()) return;
+    const detalle = detalleVideo(info, r);
     if(canDl(f)){ box.innerHTML = html; return; }
-    // Video sin permiso de descarga: reproductor de Google Drive "blindado" (ver montarDriveProtegido).
-    if(f.k === "v"){ montarDriveProtegido(f, box); return; }
-    box.innerHTML = `<div class="mfail"><b>No se pudo cargar la vista previa.</b><span>${r.formato ? "El navegador no puede reproducir el formato de este archivo." : "Google Drive no lo entregó. Si el archivo se subió hace poco, Drive puede seguir procesándolo; prueba en unos minutos."}</span><button type="button" class="btn sm" data-replay>Reintentar</button></div>`;
-    box.querySelector("[data-replay]").addEventListener("click", () => { current = null; play(f); });
-  });
+    if(f.k === "v"){
+      if(info && !info.procesado){
+        falla(box, "Este video todavía no tiene vista previa.",
+          info.directo === "cuota" ? "Google limitó este archivo por muchas reproducciones seguidas. Vuelve a intentarlo en unas horas."
+                                   : "Google Drive aún no lo preparó para reproducirse (pasa con videos recién subidos o en formatos especiales). Prueba en unos minutos.",
+          detalle, `<button type="button" class="btn sm light" data-drive>Probar con Google Drive</button>`);
+        box.querySelector("[data-drive]").addEventListener("click", () => montarDriveProtegido(f, box));
+        return;
+      }
+      montarDriveProtegido(f, box); return;
+    }
+    falla(box, "No se pudo cargar la vista previa.", r.formato ? "El navegador no puede reproducir el formato de este archivo." : "Google Drive no lo entregó. Si el archivo se subió hace poco, Drive puede seguir procesándolo; prueba en unos minutos.", detalle);
+  };
   if(demo) toast("Archivo de ejemplo: con tu Drive conectado aquí suena el archivo real.");
   current = f; queue = F.view.filter(x => (x.id || x.h) && (x.k==="v" || x.k==="a"));
   document.body.classList.add("playing"); $("#dock").classList.add("on"); $("#disc").classList.add("spin");
@@ -1065,13 +1085,14 @@ function montarDriveProtegido(f, box){
   box.innerHTML = `<div class="dprot"><span class="ldr"><i></i>Cargando desde Google Drive…</span>` +
     `<iframe src="${D.preview(f.id)}" allow="autoplay" loading="eager" title="${esc(f.nombre)}" onload="var l=this.previousElementSibling;if(l)l.remove()"></iframe>` +
     `<span class="dshield" tabindex="-1" aria-hidden="true"></span>` +
-    `<span class="dhint">Pulsa ▶ en el centro · vista previa de 1 min 50 s</span>` +
+    `<span class="dhint">Toca ▶ en el centro</span>` +
     `<button type="button" class="dfs" aria-label="Pantalla completa"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>`;
   const w = box.querySelector(".dprot"), ifr = w.querySelector("iframe"), sh = w.querySelector(".dshield");
   if(soltarGuardaFoco) soltarGuardaFoco();
   // Cuando el foco entra al reproductor de Drive (al pulsar ▶), se le quita enseguida: el video sigue sonando,
   // pero las teclas (flechas, números) ya no lo adelantan.
-  const guarda = () => setTimeout(() => { if(document.activeElement === ifr && document.contains(ifr)) sh.focus({ preventScroll:true }); }, 80);
+  const guarda = () => setTimeout(() => { if(document.activeElement === ifr && document.contains(ifr)){ w.classList.add("tocado"); sh.focus({ preventScroll:true }); } }, 80);
+  setTimeout(() => w.classList.add("tocado"), 7000);
   window.addEventListener("blur", guarda);
   soltarGuardaFoco = () => { window.removeEventListener("blur", guarda); soltarGuardaFoco = null; };
   w.querySelector(".dfs").addEventListener("click", () => pantallaCompleta(w));
@@ -1084,11 +1105,16 @@ function pararDirecto(){
   directoMedia.removeAttribute("src"); try{ directoMedia.load(); }catch(_){}
   directoMedia = null;
 }
-function montarDirecto(f, box, seq){
+function montarDirecto(f, box, seq, url){
   return new Promise(res => {
     const esVideo = f.k === "v", m = document.createElement(esVideo ? "video" : "audio");
     let hecho = false;
-    const fin = (ok, formato) => { if(hecho) return; hecho = true; clearTimeout(t); if(!ok){ try{ m.removeAttribute("src"); m.load(); }catch(_){} } res({ ok, formato:!!formato }); };
+    const fin = (ok, formato) => {
+      if(hecho) return; hecho = true; clearTimeout(t);
+      const detalle = ok ? "" : m.error ? "navegador " + m.error.code + (m.error.message ? " · " + m.error.message : "") : "sin respuesta en 15 s";
+      if(!ok){ try{ m.removeAttribute("src"); m.load(); }catch(_){} if(detalle) console.warn("[R&Cmusic] vista previa directa:", f.nombre, detalle); }
+      res({ ok, formato:!!formato, detalle });
+    };
     const t = setTimeout(() => fin(false), 15000);
     m.preload = "auto"; m.playsInline = true; m.controls = false; m.disablePictureInPicture = true;
     m.setAttribute("controlslist", "nodownload noplaybackrate noremoteplayback");
@@ -1101,8 +1127,33 @@ function montarDirecto(f, box, seq){
       box.replaceChildren(controlesDirectos(m, esVideo));
       m.play().catch(() => {});
     }, { once:true });
-    m.src = D.stream(f.id);
+    m.src = url || D.stream(f.id);
   });
+}
+// Información del video desde el servidor (guardada mientras la página esté abierta). Si el servidor es
+// anterior a la 4.8 o tarda, se sigue como antes.
+const VIDEO_INFO = new Map();
+const NO_NAVEGADOR = ["mpeg","ts","avi","wmv","flv"];       // formatos que Chrome/Safari no reproducen directo
+function infoVideo(f){
+  if(!f.id || isDemoId(f.id) || demoMode() || !F.c) return Promise.resolve(null);
+  if(VIDEO_INFO.has(f.id)) return VIDEO_INFO.get(f.id);
+  const p = Promise.race([
+    api("video", { pack:F.c.id, file:f.id, token:U.token||"", admin:A.token||"" }).catch(() => null),
+    new Promise(r => setTimeout(() => r(null), 8000))
+  ]).then(i => { if(!i) VIDEO_INFO.delete(f.id); return i; });
+  VIDEO_INFO.set(f.id, p);
+  return p;
+}
+function detalleVideo(info, r){
+  const d = [];
+  if(info){
+    if(info.cont) d.push(info.cont.toUpperCase());
+    if(info.size) d.push((info.size / 1048576).toFixed(info.size > 1e8 ? 0 : 1) + " MB");
+    d.push("Drive " + (info.procesado ? "listo" : "sin procesar"));
+    if(info.directo && info.directo !== "ok") d.push("directo: " + info.directo);
+  }
+  if(r && r.detalle) d.push(r.detalle);
+  return d.length ? "Detalle: " + d.join(" · ") : "";
 }
 function controlesDirectos(m, esVideo){
   const lim = PREVIEW_LIMIT_MS / 1000, wrap = document.createElement("div");
